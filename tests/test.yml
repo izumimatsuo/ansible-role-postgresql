@@ -1,0 +1,27 @@
+---
+- hosts: localhost
+  connection: local
+  remote_user: docker
+  tasks:
+    - name: start test container
+      docker_container:
+        image: centos:centos7
+        name: localhost
+        tty: yes
+        privileged: yes
+        recreate: yes
+        command: /sbin/init
+
+- hosts: localhost
+  connection: docker
+  remote_user: root
+  tasks:
+    - name: setup test container
+      yum:
+        name: net-tools
+
+- hosts: localhost
+  connection: docker
+  remote_user: root
+  roles:
+    - role: .

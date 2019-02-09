@@ -1,0 +1,38 @@
+---
+- name: install postgresql repository
+  yum:
+      name: "{{ pg_package_rpm }}"
+
+- name: install postgresql package
+  yum:
+      name:
+          - "{{ pg_package_base }}-server"
+          - "{{ pg_package_base }}-devel"
+          - "{{ pg_package_base }}-contrib"
+  tags: postgresql
+
+- name: detect postgresql version file
+  stat:
+    path: "/var/lib/pgsql/{{ pg_version }}/data/PG_VERSION"
+  register: dbcluster
+  tags: postgresql
+
+- name: setup postgresql
+  shell: "/usr/pgsql-{{ pg_version }}/bin/{{ pg_package_base }}-setup initdb"
+  when: not dbcluster.stat.exists
+  tags: postgresql
+
+- name: copy postgresql conf
+  template:
+    src: postgresql.conf.j2
+    dest: "/var/lib/pgsql/{{ pg_version }}/data/postgresql.conf"
+    mode: 0600
+  notify: restart postgresql service
+  tags: postgresql
+
+- name: start postgresql service
+  service:
+      name: "postgresql-{{ pg_version }}"
+      state: started
+      enabled: yes
+  tags: postgresql

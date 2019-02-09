@@ -1,0 +1,20 @@
+---
+image: williamyeh/ansible:centos7
+
+stages:
+    - build:
+
+before_script:
+    - yum update -y && yum install -y docker git
+    - pip install -U pip setuptools && pip install docker-py testinfra
+
+ansible_build:
+    stage: build
+    script:
+        - cd tests
+        - export ANSIBLE_CONFIG="`pwd`/ansible.cfg"
+        - ansible-playbook test.yml --syntax-check
+        - ansible-playbook test.yml
+        - py.test -v test.py --hosts='docker://localhost'
+    after_script:
+        - docker rm -f localhost
