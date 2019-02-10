@@ -1,6 +1,2 @@
 ---
 pg_listen_port: 5432
-
-pg_version: 9.6
-pg_package_rpm: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
-pg_package_base: postgresql96

@@ -1,6 +1,6 @@
 ---
 - name: restart postgresql service
   service:
-    name: "postgresql-{{ pg_version }}"
+    name: "postgresql-{{ PG_VERSION }}"
     state: restarted
   tags: postgresql
