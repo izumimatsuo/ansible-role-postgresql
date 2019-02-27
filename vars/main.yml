@@ -1,4 +1,5 @@
 ---
 PG_VERSION: 9.6
-PG_PACKAGE_RPM: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
+PG_PACKAGE_RPM: "https://download.postgresql.org/pub/repos/yum/9.6/\
+redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm"
 PG_PACKAGE_BASE: postgresql96

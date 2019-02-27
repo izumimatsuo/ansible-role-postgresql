@@ -9,15 +9,3 @@ CentOS 7 に postgresql を構築する ansible role です。
 項目名           |デフォルト値|説明
 -----------------|------------|----------
 pg_listen_port   |5432        |ポート番号
-
-## ビルド
-
-以下のいづれかで ansible-playbook と testinfra を実行可能。
-
-1) docker-compose でビルド実行
-
-``` $ ./build.sh ```
-
-2) gitlab-runner でビルド実行
-
-``` $ gitlab-runner exec docker --docker-volumes /var/run/docker.sock:/var/run/docker.sock ansible_build ```

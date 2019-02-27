@@ -13,20 +13,20 @@
 
 - name: detect postgresql version file
   stat:
-    path: "/var/lib/pgsql/{{ PG_VERSION }}/data/PG_VERSION"
+      path: "/var/lib/pgsql/{{ PG_VERSION }}/data/PG_VERSION"
   register: dbcluster
   tags: postgresql
 
 - name: setup postgresql
-  shell: "/usr/pgsql-{{ PG_VERSION }}/bin/{{ PG_PACKAGE_BASE }}-setup initdb"
+  command: "/usr/pgsql-{{ PG_VERSION }}/bin/{{ PG_PACKAGE_BASE }}-setup initdb"
   when: not dbcluster.stat.exists
   tags: postgresql
 
 - name: copy postgresql conf
   template:
-    src: postgresql.conf.j2
-    dest: "/var/lib/pgsql/{{ PG_VERSION }}/data/postgresql.conf"
-    mode: 0600
+      src: postgresql.conf.j2
+      dest: "/var/lib/pgsql/{{ PG_VERSION }}/data/postgresql.conf"
+      mode: 0600
   notify: restart postgresql service
   tags: postgresql
 
@@ -34,5 +34,5 @@
   service:
       name: "postgresql-{{ PG_VERSION }}"
       state: started
-      enabled: yes
+      enabled: true
   tags: postgresql

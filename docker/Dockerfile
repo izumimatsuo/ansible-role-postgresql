@@ -1,7 +1,7 @@
-FROM williamyeh/ansible:centos7
+FROM williamyeh/ansible:ubuntu16.04
 
-RUN yum update -y && yum install -y docker git
-RUN pip install -U pip setuptools && pip install docker-py testinfra
+RUN apt update -y && apt install -y docker.io
+RUN pip install molecule docker-py
 
-WORKDIR /root
+WORKDIR /root/build
 CMD ["/bin/bash"]
