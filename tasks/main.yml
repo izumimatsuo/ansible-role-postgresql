@@ -34,5 +34,5 @@
   service:
       name: "postgresql-{{ PG_VERSION }}"
       state: started
-      enabled: true
+      enabled: yes
   tags: postgresql
