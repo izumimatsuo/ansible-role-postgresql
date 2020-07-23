@@ -1,0 +1,46 @@
+---
+# --- replication
+- name: create replication user # noqa 301
+  become: yes
+  become_user: postgres
+  command: psql -c "CREATE ROLE {{ pg_replication_user }} LOGIN REPLICATION PASSWORD '{{ pg_replication_passwd }}';"
+  tags: postgresql
+
+- name: set pg_hba conf
+  blockinfile:
+    path: '/var/lib/pgsql/{{ PG_VERSION }}/data/pg_hba.conf'
+    block: |
+      host replication {{ pg_replication_user }} {{ item }} md5
+    marker: '# {mark} ANSIBLE MANAGED BLOCK {{ item }}'
+    owner: postgres
+    group: postgres
+    mode: '0600'
+  with_items: '{{ pg_replication_allow_ipaddr }}'
+  tags: postgresql
+
+- name: copy recovery conf
+  template:
+    src: recovery.conf.j2
+    dest: "/var/lib/pgsql/{{ PG_VERSION }}/data/recovery.conf.in"
+    owner: postgres
+    group: postgres
+    mode: '0600'
+  tags: postgresql
+
+- name: copy start shell
+  template:
+    src: start_replication.sh.j2
+    dest: "/usr/local/bin/pg_start_replication.sh"
+    owner: root
+    group: root
+    mode: '0755'
+  tags: postgresql
+
+- name: copy join shell
+  template:
+    src: join_replication.sh.j2
+    dest: "/usr/local/bin/pg_join_replication.sh"
+    owner: root
+    group: root
+    mode: '0755'
+  tags: postgresql

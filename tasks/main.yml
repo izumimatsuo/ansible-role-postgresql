@@ -1,32 +1,34 @@
 ---
 - name: install postgresql repository
   yum:
-      name: "{{ PG_PACKAGE_RPM }}"
+    name: "{{ PG_PACKAGE_RPM }}"
 
-- name: install postgresql package
+- name: install postgresql {{ PG_VERSION }} package
   yum:
-      name:
-          - "{{ PG_PACKAGE_BASE }}-server"
-          - "{{ PG_PACKAGE_BASE }}-devel"
-          - "{{ PG_PACKAGE_BASE }}-contrib"
+    name:
+      - "{{ PG_PACKAGE_BASE }}-server"
+      - "{{ PG_PACKAGE_BASE }}-devel"
+      - "{{ PG_PACKAGE_BASE }}-contrib"
   tags: postgresql
 
-- name: detect postgresql version file
+- name: detect database cluster
   stat:
-      path: "/var/lib/pgsql/{{ PG_VERSION }}/data/PG_VERSION"
+    path: "/var/lib/pgsql/{{ PG_VERSION }}/data/PG_VERSION"
   register: dbcluster
   tags: postgresql
 
-- name: setup postgresql
+- name: setup database cluster
   command: "/usr/pgsql-{{ PG_VERSION }}/bin/{{ PG_PACKAGE_BASE }}-setup initdb"
   when: not dbcluster.stat.exists
   tags: postgresql
 
 - name: copy postgresql conf
   template:
-      src: postgresql.conf.j2
-      dest: "/var/lib/pgsql/{{ PG_VERSION }}/data/postgresql.conf"
-      mode: 0600
+    src: postgresql.conf.j2
+    dest: "/var/lib/pgsql/{{ PG_VERSION }}/data/postgresql.conf"
+    owner: postgres
+    group: postgres
+    mode: '0600'
   notify: restart postgresql service
   tags: postgresql
 
@@ -36,3 +38,16 @@
       state: started
       enabled: yes
   tags: postgresql
+  when: not dbcluster.stat.exists
+
+- include_tasks: replication.yml
+  when: pg_enable_replication and not dbcluster.stat.exists
+  tags: postgresql
+
+- name: stop postgresql service
+  service:
+      name: "postgresql-{{ PG_VERSION }}"
+      state: stopped
+      enabled: no
+  tags: postgresql
+  when: pg_enable_replication and not dbcluster.stat.exists

@@ -3,4 +3,5 @@
   service:
     name: "postgresql-{{ PG_VERSION }}"
     state: restarted
+  when: not pg_enable_replication
   tags: postgresql

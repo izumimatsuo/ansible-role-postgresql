@@ -641,3 +641,12 @@ default_text_search_config = 'pg_catalog.english'
 #------------------------------------------------------------------------------
 
 # Add settings for extensions here
+
+# Replication config
+{% if pg_enable_replication %}
+listen_addresses = '*'
+wal_level = replica
+max_wal_senders = 5
+hot_standby = on
+synchronous_standby_names = ''
+{% endif %}

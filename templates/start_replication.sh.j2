@@ -1,0 +1,13 @@
+#!/bin/bash
+
+pgdata=/var/lib/pgsql/{{ PG_VERSION }}/data
+pgpath=/usr/pgsql-{{ PG_VERSION }}/bin
+
+sudo systemctl start postgresql-{{ PG_VERSION }}.service
+
+if sudo su -c "test -e $pgdata/recovery.conf" - postgres
+then
+  sudo su -c "$pgpath/pg_ctl -D $pgdata promote" - postgres
+fi
+
+echo 'primary host started.'
