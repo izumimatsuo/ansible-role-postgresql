@@ -7,6 +7,7 @@ pg_enable_replication を設定することでレプリケーションに必要�
 - レプリケーションユーザの登録
 - pg_hab.conf および postgresql.conf の設定追加
 - 運用に必要なツールの導入
+- クラスタリングミドル (keepalived) の導入
 
 レプリケーション適用すると運用に必要な以下のツールが導入される
 
@@ -21,8 +22,9 @@ pg_enable_replication を設定することでレプリケーションに必要�
 | --------------------- | ------------ | ---------- |
 | pg_listen_port        | 5432         | ポート番号 |
 | pg_enable_replication | no           | レプリケーション適用有無 |
-| pg_primary_host       | none         | プライマリーホスト |
+| pg_primary_host       | none         | プライマリーホスト (VIP) |
 | pg_primary_port       | 5432         | プライマリーホストのポート番号 |
 | pg_replication_user   | repl_user    | レプリケーションユーザ |
 | pg_replication_passwd | password     | レプリケーションユーザのパスワード |
 | pg_replication_allow_ipaddr | none   | レプリケーション許可IPアドレス |
+| pg_check_interface    | none         | ヘルスチェック用NIC |

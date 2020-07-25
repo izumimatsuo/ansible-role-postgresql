@@ -2,20 +2,22 @@
 
 primary_host=$1
 pgdata=/var/lib/pgsql/{{ PG_VERSION }}/data
+message='secondary host already started.'
 
 if test -z $primary_host
 then
   primary_host={{ pg_primary_host }}
 fi
 
-if ! sudo su -c "test -e $pgdata/recovery.conf" - postgres
+if sudo su -c "! test -e $pgdata/recovery.conf && psql -h $primary_host -U {{ pg_replication_user }} postgres -l > /dev/null" - postgres
 then
   sudo systemctl stop postgresql-{{ PG_VERSION }}.service
   echo "get basebackup from $primary_host"
   sudo su -c "rm -fr $pgdata/*" - postgres
-  sudo su -c "pg_basebackup -x -h $primary_host -p {{ pg_primary_port }} -U {{ pg_replication_user }} -D $pgdata" - postgres
+  sudo su -c "pg_basebackup -x -h $primary_host -p {{ pg_primary_port }} -U {{ pg_replication_user }} -D $pgdata -P" - postgres
   sudo su -c "sed -e 's/@ip_addr@/$primary_host/' -e 's/@hostname@/$(hostname)/' < $pgdata/recovery.conf.in > $pgdata/recovery.conf" - postgres
+  message='secondary host started.'
 fi
 
 sudo systemctl start postgresql-{{ PG_VERSION }}.service
-echo 'secondary host started.'
+echo $message

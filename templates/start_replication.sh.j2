@@ -2,12 +2,23 @@
 
 pgdata=/var/lib/pgsql/{{ PG_VERSION }}/data
 pgpath=/usr/pgsql-{{ PG_VERSION }}/bin
+message='primary host started.'
+
+if systemctl status postgresql-{{ PG_VERSION }}.service > /dev/null
+then
+  message='primary host already started.'
+fi
 
 sudo systemctl start postgresql-{{ PG_VERSION }}.service
 
 if sudo su -c "test -e $pgdata/recovery.conf" - postgres
 then
   sudo su -c "$pgpath/pg_ctl -D $pgdata promote" - postgres
+  while ! sudo su -c "psql -h $vhost -U $reprole $repdb -c \"SELECT pg_switch_xlog()\"" - postgres
+  do
+    sleep 1
+  done
+  sudo su -c "psql -h {{ pg_primary_host }} -U {{ pg_replication_user }} postgres -c \"CHECKPOINT\"" - postgres
 fi
 
-echo 'primary host started.'
+echo $message

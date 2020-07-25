@@ -44,10 +44,6 @@
   when: pg_enable_replication and not dbcluster.stat.exists
   tags: postgresql
 
-- name: stop postgresql service
-  service:
-      name: "postgresql-{{ PG_VERSION }}"
-      state: stopped
-      enabled: no
-  tags: postgresql
+- include_tasks: keepalived.yml
   when: pg_enable_replication and not dbcluster.stat.exists
+  tags: postgresql

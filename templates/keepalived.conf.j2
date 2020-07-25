@@ -1,0 +1,29 @@
+global_defs {
+    enable_script_security
+}
+
+vrrp_script chk_postmaster {
+    script "systemctl is-active postgresql-{{ PG_VERSION }}.service"
+    interval 2
+}
+
+vrrp_instance pgsql {
+    garp_master_delay 5
+    state BACKUP
+    interface {{ pg_check_interface }}
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass GGhdN3L13l
+    }
+    virtual_ipaddress {
+        {{ pg_primary_host }} dev {{ pg_check_interface }}
+    }
+    track_script {
+        chk_postmaster
+    }
+    notify_master "/usr/local/bin/pg_start_replication.sh"
+    notify_backup "/usr/local/bin/pg_join_replication.sh"
+}

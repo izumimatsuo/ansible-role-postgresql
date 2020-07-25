@@ -1,15 +1,51 @@
 ---
 # --- replication
+- name: create ssh management directry
+  file:
+    path: /var/lib/pgsql/.ssh
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+  tags: postgresql
+
+- name: generate ssh key
+  openssh_keypair:
+    path: /var/lib/pgsql/.ssh/id_rsa
+    owner: postgres
+    group: postgres
+    mode: '0600'
+  tags: postgresql
+
+- name: copy public keys file
+  become: yes
+  become_user: postgres
+  command: 'cp /var/lib/pgsql/.ssh/id_rsa.pub /var/lib/pgsql/{{ PG_VERSION }}/data'
+  args:
+    creates: '/var/lib/pgsql/{{ PG_VERSION }}/data/id_rsa.pub'
+  tags: postgresql
+
 - name: create replication user # noqa 301
   become: yes
   become_user: postgres
   command: psql -c "CREATE ROLE {{ pg_replication_user }} LOGIN REPLICATION PASSWORD '{{ pg_replication_passwd }}';"
   tags: postgresql
 
+- name: set passwd file
+  lineinfile:
+    path: '/var/lib/pgsql/.pgpass'
+    create: yes
+    line: '*:*:*:{{ pg_replication_user }}:{{ pg_replication_passwd }}'
+    owner: postgres
+    group: postgres
+    mode: '0600'
+  tags: postgresql
+
 - name: set pg_hba conf
   blockinfile:
     path: '/var/lib/pgsql/{{ PG_VERSION }}/data/pg_hba.conf'
     block: |
+      host postgres {{ pg_replication_user }} {{ item }} md5
       host replication {{ pg_replication_user }} {{ item }} md5
     marker: '# {mark} ANSIBLE MANAGED BLOCK {{ item }}'
     owner: postgres
@@ -18,7 +54,7 @@
   with_items: '{{ pg_replication_allow_ipaddr }}'
   tags: postgresql
 
-- name: copy recovery conf
+- name: copy recovery conf template
   template:
     src: recovery.conf.j2
     dest: "/var/lib/pgsql/{{ PG_VERSION }}/data/recovery.conf.in"
@@ -43,4 +79,11 @@
     owner: root
     group: root
     mode: '0755'
+  tags: postgresql
+
+- name: stop postgresql service
+  service:
+      name: "postgresql-{{ PG_VERSION }}"
+      state: stopped
+      enabled: no
   tags: postgresql

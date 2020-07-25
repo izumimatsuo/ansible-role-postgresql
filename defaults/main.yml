@@ -6,3 +6,4 @@ pg_primary_port: 5432
 pg_replication_user: 'repl_user'
 pg_replication_passwd: 'password'
 pg_replication_allow_ipaddr: # ['192.168.33.11/32', '192.168.33.12/32'] or '192.168.33.0/24'
+pg_check_interface: # 'eth1'

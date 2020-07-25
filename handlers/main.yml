@@ -5,3 +5,10 @@
     state: restarted
   when: not pg_enable_replication
   tags: postgresql
+
+- name: restart keepalived service
+  service:
+    name: keepalived
+    state: restarted
+  when: pg_enable_replication
+  tags: postgresql
