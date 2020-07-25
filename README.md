@@ -14,6 +14,14 @@ pg_enable_replication を設定することでレプリケーションに必要�
 - pg_start_replication.sh プライマリサーバの起動
 - pg_join_replication.sh セカンダリサーバの追加
 
+起動時の動作は以下となる
+
+1. 1台目の keepalived 起動 (MASTER_STATE へ遷移)
+1. pg_primary_host の内容を VIP として設定
+1. pg_start_replication.sh を実行 (postgresql が primary で起動)
+1. 2台目の keepalived 起動 (BACKUP_STATE へ遷移)
+1. pg_join_replication.sh を実行 (postgresql が secondary で起動)
+
 ## 設定項目
 
 以下の設定項目は上書き可能。
