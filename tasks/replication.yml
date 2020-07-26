@@ -81,6 +81,15 @@
     mode: '0755'
   tags: postgresql
 
+- name: copy switch sync_state shell
+  template:
+    src: switch_sync_state.sh.j2
+    dest: "/usr/local/bin/pg_switch_sync_state.sh"
+    owner: root
+    group: root
+    mode: '0755'
+  tags: postgresql
+
 - name: stop postgresql service
   service:
       name: "postgresql-{{ PG_VERSION }}"

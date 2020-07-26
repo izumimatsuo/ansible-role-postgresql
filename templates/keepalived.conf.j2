@@ -4,7 +4,12 @@ global_defs {
 
 vrrp_script chk_postmaster {
     script "systemctl is-active postgresql-{{ PG_VERSION }}.service"
-    interval 2
+    interval 3
+}
+
+vrrp_script chk_sync_state {
+    script "/usr/local/bin/pg_switch_sync_state.sh"
+    interval 3
 }
 
 vrrp_instance pgsql {
@@ -23,6 +28,7 @@ vrrp_instance pgsql {
     }
     track_script {
         chk_postmaster
+        chk_sync_state
     }
     notify_master "/usr/local/bin/pg_start_replication.sh"
     notify_backup "/usr/local/bin/pg_join_replication.sh"
