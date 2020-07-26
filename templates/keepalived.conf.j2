@@ -26,4 +26,6 @@ vrrp_instance pgsql {
     }
     notify_master "/usr/local/bin/pg_start_replication.sh"
     notify_backup "/usr/local/bin/pg_join_replication.sh"
+    notify_fault  "sudo systemctl restart postgresql-{{ PG_VERSION }}.service"
+    notify_stop   "sudo systemctl stop postgresql-{{ PG_VERSION }}.service"
 }
