@@ -14,6 +14,7 @@ pg_enable_replication を設定することで (同期) レプリケーション
 1. 1台目の keepalived 起動 (MASTER_STATE へ遷移)
 1. pg_primary_host の内容を VIP として設定
 1. pg_start_replication.sh を実行 (postgresql が primary で起動)
+1. 非同期レプリケーション開始
 1. 2台目の keepalived 起動 (BACKUP_STATE へ遷移)
 1. pg_join_replication.sh を実行 (postgresql が secondary で起動)
 1. primary はレプリケーション動作を非同期から同期へ移行
@@ -22,9 +23,8 @@ pg_enable_replication を設定することで (同期) レプリケーション
 
 1. secandary が障害の場合は VIP は移動せず、primary は非同期レプリケーションに移行
 1. secandary が復旧すると primary は再度、同期レプリケーションへ移行
-
 1. primary で障害の場合は secandary へ VIP が移動して非同期レプリケーションへ移行
-1. 旧primary が復旧すると、secandary として組み込まれ同期レプケーションへ移行
+1. 旧primary が復旧すると、新secandary として組み込まれ同期レプケーションへ移行
 
 ## 設定項目
 
