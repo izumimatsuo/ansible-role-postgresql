@@ -1,29 +1,29 @@
 ---
 # --- replication
-- name: create ssh management directry
-  file:
-    path: /var/lib/pgsql/.ssh
-    state: directory
-    owner: postgres
-    group: postgres
-    mode: '0700'
-  tags: postgresql
+# - name: create ssh management directry
+#  file:
+#    path: /var/lib/pgsql/.ssh
+#    state: directory
+#    owner: postgres
+#    group: postgres
+#    mode: '0700'
+#  tags: postgresql
 
-- name: generate ssh key
-  openssh_keypair:
-    path: /var/lib/pgsql/.ssh/id_rsa
-    owner: postgres
-    group: postgres
-    mode: '0600'
-  tags: postgresql
+# - name: generate ssh key
+#  openssh_keypair:
+#    path: /var/lib/pgsql/.ssh/id_rsa
+#    owner: postgres
+#    group: postgres
+#    mode: '0600'
+#  tags: postgresql
 
-- name: copy public keys file
-  become: yes
-  become_user: postgres
-  command: 'cp /var/lib/pgsql/.ssh/id_rsa.pub /var/lib/pgsql/{{ PG_VERSION }}/data'
-  args:
-    creates: '/var/lib/pgsql/{{ PG_VERSION }}/data/id_rsa.pub'
-  tags: postgresql
+# - name: copy public keys file
+#  become: yes
+#  become_user: postgres
+#  command: 'cp /var/lib/pgsql/.ssh/id_rsa.pub /var/lib/pgsql/{{ PG_VERSION }}/data'
+#  args:
+#    creates: '/var/lib/pgsql/{{ PG_VERSION }}/data/id_rsa.pub'
+#  tags: postgresql
 
 - name: create replication user # noqa 301
   become: yes
