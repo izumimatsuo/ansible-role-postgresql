@@ -7,9 +7,12 @@ message='secondary host already started.'
 if test -z $primary_host
 then
   primary_host={{ pg_primary_host }}
+{% if pg_use_keepalived %}
+  sudo ip addr del $primary_host dev {{ pg_check_interface }}
+{% endif %}
 fi
 
-if sudo su -c "! test -e $pgdata/recovery.conf && psql -h $primary_host -U {{ pg_replication_user }} postgres -l > /dev/null" - postgres
+if sudo su -c "! test -e $pgdata/recovery.conf && psql -h $primary_host -U {{ pg_replication_user }} postgres -l > /dev/null && ! ip addr | grep $primary_host" - postgres
 then
   sudo systemctl stop postgresql-{{ PG_VERSION }}.service
   echo "get basebackup from $primary_host"
