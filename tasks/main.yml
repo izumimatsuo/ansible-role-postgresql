@@ -2,6 +2,7 @@
 - name: install postgresql repository
   yum:
     name: "{{ PG_PACKAGE_RPM }}"
+  tags: postgresql
 
 - name: install postgresql {{ PG_VERSION }} package
   yum:
@@ -39,6 +40,28 @@
       enabled: yes
   tags: postgresql
   when: not dbcluster.stat.exists
+
+- name: create role
+  become: yes
+  become_user: postgres
+  command: psql -c "CREATE ROLE {{ pg_user }} LOGIN PASSWORD '{{ pg_passwd }}';"
+  when: not dbcluster.stat.exists
+  tags: postgresql
+
+- name: create database
+  become: yes
+  become_user: postgres
+  command: psql -c "CREATE DATABASE {{ pg_database }};"
+  when: not dbcluster.stat.exists
+  tags: postgresql
+
+- name: set pg_hba conf
+  lineinfile:
+    path: '/var/lib/pgsql/{{ PG_VERSION }}/data/pg_hba.conf'
+    regexp: '^host {{ pg_database }} {{ pg_user }} all md5$'
+    line: 'host {{ pg_database }} {{ pg_user }} all md5'
+  notify: restart postgresql service
+  tags: postgresql
 
 - include_tasks: replication.yml
   when: pg_enable_replication and not dbcluster.stat.exists
