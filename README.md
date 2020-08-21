@@ -33,6 +33,9 @@ pg_enable_replication を設定することで (同期) レプリケーション
 | 項目名                | デフォルト値 | 説明       |
 | --------------------- | ------------ | ---------- |
 | pg_listen_port        | 5432         | ポート番号 |
+| pg_user               | developer    | データベースユーザ |
+| pg_passwd             | password     | データベースユーザのパスワード |
+| pg_database           | development  | データベース名 |
 | pg_enable_replication | no           | レプリケーション適用有無 |
 | pg_primary_host       | none         | プライマリーホスト (VIP) |
 | pg_primary_port       | 5432         | プライマリーホストのポート番号 |

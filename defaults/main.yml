@@ -1,5 +1,8 @@
 ---
 pg_listen_port: 5432
+pg_user: 'developer'
+pg_passwd: 'password'
+pg_database: 'development'
 pg_enable_replication: no
 pg_primary_host: # '192.168.33.11'
 pg_primary_port: 5432
