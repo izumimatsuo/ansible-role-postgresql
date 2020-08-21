@@ -60,6 +60,9 @@
     path: '/var/lib/pgsql/{{ PG_VERSION }}/data/pg_hba.conf'
     regexp: '^host {{ pg_database }} {{ pg_user }} all md5$'
     line: 'host {{ pg_database }} {{ pg_user }} all md5'
+    owner: postgres
+    group: postgres
+    mode: '0600'
   notify: restart postgresql service
   tags: postgresql
 

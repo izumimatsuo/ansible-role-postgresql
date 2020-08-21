@@ -1,5 +1,4 @@
 ---
-# --- replication
 # - name: create ssh management directry
 #  file:
 #    path: /var/lib/pgsql/.ssh
