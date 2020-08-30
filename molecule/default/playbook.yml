@@ -1,5 +1,7 @@
 ---
 - name: Converge
   hosts: all
+  vars:
+    test_skip: true
   roles:
     - role: ansible-role-postgresql

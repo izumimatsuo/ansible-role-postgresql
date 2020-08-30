@@ -19,4 +19,4 @@ def test_postgresql_running_and_enabled(host):
 
 
 def test_postgresql_is_listen(host):
-    assert host.socket("tcp://127.0.0.1:5432").is_listening
+    assert host.socket("tcp://0.0.0.0:5432").is_listening

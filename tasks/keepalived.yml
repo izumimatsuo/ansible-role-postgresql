@@ -3,7 +3,6 @@
   yum:
     name:
       - keepalived
-      - psmisc
   tags: postgresql
 
 - name: copy keepalived conf
@@ -12,12 +11,13 @@
     dest: /etc/keepalived/keepalived.conf
     mode: 0644
   notify: restart keepalived service
-  when: test_skip is undefined
   tags: postgresql
 
 - name: create script execute user
   user:
     name: 'keepalived_script'
+    createhome: no
+    shell: /sbin/nologin
   tags: postgresql
 
 - name: edit sudoers

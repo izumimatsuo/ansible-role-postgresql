@@ -10,5 +10,5 @@
   service:
     name: keepalived
     state: restarted
-  when: pg_enable_replication
+  when: test_skip is undefined
   tags: postgresql

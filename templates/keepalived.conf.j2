@@ -3,7 +3,7 @@ global_defs {
 }
 
 vrrp_script chk_postmaster {
-    script "systemctl is-active postgresql-{{ PG_VERSION }}.service"
+    script "/usr/bin/systemctl is-active postgresql-{{ PG_VERSION }}.service"
     interval 3
 }
 
@@ -32,6 +32,6 @@ vrrp_instance pgsql {
     }
     notify_master "/usr/local/bin/pg_start_replication.sh"
     notify_backup "/usr/local/bin/pg_join_replication.sh"
-    notify_fault  "sudo systemctl restart postgresql-{{ PG_VERSION }}.service"
-    notify_stop   "sudo systemctl stop postgresql-{{ PG_VERSION }}.service"
+    notify_fault  "/usr/bin/sudo systemctl start postgresql-{{ PG_VERSION }}.service"
+    notify_stop   "/usr/bin/sudo systemctl stop postgresql-{{ PG_VERSION }}.service"
 }
