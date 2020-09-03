@@ -67,11 +67,9 @@
   tags: postgresql
 
 - include_tasks: replication.yml
-  when: pg_enable_replication and not dbcluster.stat.exists
+  when: pg_cluster != None and not dbcluster.stat.exists
   tags: postgresql
 
 - include_tasks: keepalived.yml
-  when:
-    - pg_enable_replication and not dbcluster.stat.exists
-    - pg_use_keepalived
+  when: pg_cluster != None and not dbcluster.stat.exists
   tags: postgresql

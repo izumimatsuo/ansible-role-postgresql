@@ -15,7 +15,7 @@ vrrp_script chk_sync_state {
 vrrp_instance pgsql {
     garp_master_delay 5
     state BACKUP
-    interface {{ pg_check_interface }}
+    interface {{ pg_cluster.check_interface }}
     virtual_router_id 61
     priority 100
     advert_int 1
@@ -24,7 +24,7 @@ vrrp_instance pgsql {
         auth_pass GGhdN3L13l
     }
     virtual_ipaddress {
-        {{ pg_primary_host }} dev {{ pg_check_interface }}
+        {{ pg_cluster.virtual_ipaddr }} dev {{ pg_cluster.check_interface }}
     }
     track_script {
         chk_postmaster

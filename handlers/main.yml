@@ -3,7 +3,7 @@
   service:
     name: "postgresql-{{ PG_VERSION }}"
     state: restarted
-  when: not pg_enable_replication
+  when: pg_cluster == None
   tags: postgresql
 
 - name: restart keepalived service

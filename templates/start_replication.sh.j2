@@ -18,7 +18,6 @@ then
   do
     sleep 1
   done
-  sudo su -c "psql -h {{ pg_primary_host }} -U {{ pg_replication_user }} postgres -c \"CHECKPOINT\"" - postgres
 fi
 
 echo $message

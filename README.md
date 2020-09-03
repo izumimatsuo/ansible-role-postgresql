@@ -2,7 +2,7 @@
 
 CentOS 7 に postgresql を導入する ansible role です。
 
-pg_enable_replication を設定することで (同期) レプリケーションに必要な設定をおこなう
+pg_cluster および pg_replication_* を設定することでサーバクラスタ (と同期レプリケーション）に必要な設定をおこなう
 
 - レプリケーションユーザの登録
 - pg_hab.conf および postgresql.conf の設定追加
@@ -12,7 +12,7 @@ pg_enable_replication を設定することで (同期) レプリケーション
 起動時の動作は以下となる
 
 1. 1台目の keepalived 起動 (MASTER_STATE へ遷移)
-1. pg_primary_host の内容を VIP として設定
+1. VIP を追加
 1. pg_start_replication.sh を実行 (postgresql が primary で起動)
 1. 非同期レプリケーション開始
 1. 2台目の keepalived 起動 (BACKUP_STATE へ遷移)
@@ -36,10 +36,7 @@ pg_enable_replication を設定することで (同期) レプリケーション
 | pg_user               | developer    | データベースユーザ |
 | pg_passwd             | password     | データベースユーザのパスワード |
 | pg_database           | development  | データベース名 |
-| pg_enable_replication | no           | レプリケーション適用有無 |
-| pg_primary_host       | none         | プライマリーホスト (VIP) |
-| pg_primary_port       | 5432         | プライマリーホストのポート番号 |
+| pg_cluster            | None         | クラスタ設定情報 # {virtual_ipaddr: '192.168.33.10', check_interface: 'eth1'} |
 | pg_replication_user   | repl_user    | レプリケーションユーザ |
 | pg_replication_passwd | password     | レプリケーションユーザのパスワード |
 | pg_replication_allow_ipaddr | none   | レプリケーション許可IPアドレス |
-| pg_check_interface    | none         | ヘルスチェック用NIC |
