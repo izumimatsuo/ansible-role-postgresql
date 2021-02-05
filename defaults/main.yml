@@ -1,9 +1,9 @@
 ---
-pg_listen_port: 5432
-pg_user: 'developer'
-pg_passwd: 'password'
-pg_database: 'development'
-pg_cluster: # {virtual_ipaddr: '192.168.33.10', check_interface: 'eth1'}
-pg_replication_user: 'repl_user'
-pg_replication_passwd: 'password'
-pg_replication_allow_ipaddr: # ['192.168.33.11/32', '192.168.33.12/32'] or '192.168.33.0/24'
+pgsql_listen_port: 5432
+pgsql_user: 'developer'
+pgsql_passwd: 'password'
+pgsql_database: 'development'
+pgsql_cluster: # {virtual_ipaddr: '192.168.33.10', check_interface: 'eth1'}
+pgsql_replication_user: 'repl_user'
+pgsql_replication_passwd: 'password'
+pgsql_replication_allow_ipaddr: # ['192.168.33.11/32', '192.168.33.12/32'] or '192.168.33.0/24'

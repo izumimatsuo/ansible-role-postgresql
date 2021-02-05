@@ -1,75 +1,80 @@
 ---
 - name: install postgresql repository
   yum:
-    name: "{{ PG_PACKAGE_RPM }}"
-  tags: postgresql
+    name: "{{ PGSQL_PACKAGE_RPM }}"
 
-- name: install postgresql {{ PG_VERSION }} package
+- name: install postgresql {{ PGSQL_VERSION }} package
   yum:
     name:
-      - "{{ PG_PACKAGE_BASE }}-server"
-      - "{{ PG_PACKAGE_BASE }}-devel"
-      - "{{ PG_PACKAGE_BASE }}-contrib"
-  tags: postgresql
+      - "{{ PGSQL_PACKAGE_BASE }}-server"
+      - "{{ PGSQL_PACKAGE_BASE }}-devel"
+      - "{{ PGSQL_PACKAGE_BASE }}-contrib"
 
 - name: detect database cluster
   stat:
-    path: "/var/lib/pgsql/{{ PG_VERSION }}/data/PG_VERSION"
+    path: "/var/lib/pgsql/{{ PGSQL_VERSION }}/data/PG_VERSION"
   register: dbcluster
-  tags: postgresql
 
 - name: setup database cluster
-  command: "/usr/pgsql-{{ PG_VERSION }}/bin/{{ PG_PACKAGE_BASE }}-setup initdb"
+  command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/{{ PGSQL_PACKAGE_BASE }}-setup initdb"
   when: not dbcluster.stat.exists
-  tags: postgresql
 
-- name: copy postgresql conf
-  template:
-    src: postgresql.conf.j2
-    dest: "/var/lib/pgsql/{{ PG_VERSION }}/data/postgresql.conf"
+- name: create archive dir
+  file:
+    path: "/var/lib/pgsql/{{ PGSQL_VERSION }}/archive"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+  when: not dbcluster.stat.exists
+
+- name: set postgresql.conf
+  blockinfile:
+    dest: "/var/lib/pgsql/{{ PGSQL_VERSION }}/data/postgresql.conf"
+    backup: true
+    block: |
+      listen_addresses = '*'
+      port = {{ pgsql_listen_port }}
+      wal_level = replica
+      archive_mode = on
+      archive_command = 'cp %p /var/lib/pgsql/{{ PGSQL_VERSION }}/archive/%f'
+      max_wal_senders = 5
+      hot_standby = on
     owner: postgres
     group: postgres
     mode: '0600'
   notify: restart postgresql service
-  tags: postgresql
 
 - name: start postgresql service
   service:
-      name: "postgresql-{{ PG_VERSION }}"
+      name: "postgresql-{{ PGSQL_VERSION }}"
       state: started
       enabled: yes
-  tags: postgresql
   when: not dbcluster.stat.exists
 
 - name: create role
   become: yes
   become_user: postgres
-  command: psql -c "CREATE ROLE {{ pg_user }} LOGIN PASSWORD '{{ pg_passwd }}';"
+  command: psql -c "CREATE ROLE {{ pgsql_user }} LOGIN PASSWORD '{{ pgsql_passwd }}';"
   when: not dbcluster.stat.exists
-  tags: postgresql
 
 - name: create database
   become: yes
   become_user: postgres
-  command: psql -c "CREATE DATABASE {{ pg_database }};"
+  command: psql -c "CREATE DATABASE {{ pgsql_database }};"
   when: not dbcluster.stat.exists
-  tags: postgresql
 
 - name: set pg_hba conf
   lineinfile:
-    path: '/var/lib/pgsql/{{ PG_VERSION }}/data/pg_hba.conf'
-    regexp: '^host {{ pg_database }} {{ pg_user }} all md5$'
-    line: 'host {{ pg_database }} {{ pg_user }} all md5'
+    backup: true
+    path: '/var/lib/pgsql/{{ PGSQL_VERSION }}/data/pg_hba.conf'
+    regexp: '^host {{ pgsql_database }} {{ pgsql_user }} all md5$'
+    line: 'host {{ pgsql_database }} {{ pgsql_user }} all md5'
     owner: postgres
     group: postgres
     mode: '0600'
   notify: restart postgresql service
-  tags: postgresql
 
-- include_tasks: replication.yml
-  when: pg_cluster != None and not dbcluster.stat.exists
-  tags: postgresql
-
-- include_tasks: keepalived.yml
-  when: pg_cluster != None and not dbcluster.stat.exists
-  tags: postgresql
+  #- include_tasks: keepalived.yml
+  #  when: pgsql_cluster != None and not dbcluster.stat.exists
+  #  tags: postgresql

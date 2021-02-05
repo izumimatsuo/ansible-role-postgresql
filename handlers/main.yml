@@ -1,14 +1,5 @@
 ---
 - name: restart postgresql service
   service:
-    name: "postgresql-{{ PG_VERSION }}"
+    name: "postgresql-{{ PGSQL_VERSION }}"
     state: restarted
-  when: pg_cluster == None
-  tags: postgresql
-
-- name: restart keepalived service
-  service:
-    name: keepalived
-    state: restarted
-  when: test_skip is undefined
-  tags: postgresql

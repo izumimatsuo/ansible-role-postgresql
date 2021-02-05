@@ -27,14 +27,14 @@
 - name: create replication user # noqa 301
   become: yes
   become_user: postgres
-  command: psql -c "CREATE ROLE {{ pg_replication_user }} LOGIN REPLICATION PASSWORD '{{ pg_replication_passwd }}';"
+  command: psql -c "CREATE ROLE {{ pgsql_replication_user }} LOGIN REPLICATION PASSWORD '{{ pgsql_replication_passwd }}';"
   tags: postgresql
 
 - name: set passwd file
   lineinfile:
     path: '/var/lib/pgsql/.pgpass'
     create: yes
-    line: '*:*:*:{{ pg_replication_user }}:{{ pg_replication_passwd }}'
+    line: '*:*:*:{{ pgsql_replication_user }}:{{ pgsql_replication_passwd }}'
     owner: postgres
     group: postgres
     mode: '0600'
@@ -44,13 +44,13 @@
   blockinfile:
     path: '/var/lib/pgsql/{{ PG_VERSION }}/data/pg_hba.conf'
     block: |
-      host postgres {{ pg_replication_user }} {{ item }} md5
-      host replication {{ pg_replication_user }} {{ item }} md5
+      host postgres {{ pgsql_replication_user }} {{ item }} md5
+      host replication {{ pgsql_replication_user }} {{ item }} md5
     marker: '# {mark} ANSIBLE MANAGED BLOCK {{ item }}'
     owner: postgres
     group: postgres
     mode: '0600'
-  with_items: '{{ pg_replication_allow_ipaddr }}'
+  with_items: '{{ pgsql_replication_allow_ipaddr }}'
   tags: postgresql
 
 - name: copy recovery conf template

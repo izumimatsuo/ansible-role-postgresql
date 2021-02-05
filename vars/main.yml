@@ -1,5 +1,5 @@
 ---
-PG_VERSION: 9.6
-PG_PACKAGE_RPM: "https://download.postgresql.org/pub/repos/yum/9.6/\
+PGSQL_VERSION: 9.6
+PGSQL_PACKAGE_RPM: "https://download.postgresql.org/pub/repos/yum/{{ PGSQL_VERSION }}/\
 redhat/rhel-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
-PG_PACKAGE_BASE: postgresql96
+PGSQL_PACKAGE_BASE: "postgresql{{ PGSQL_VERSION | replace('.', '') }}"
