@@ -10,35 +10,52 @@
       - "{{ PGSQL_PACKAGE_BASE }}-devel"
       - "{{ PGSQL_PACKAGE_BASE }}-contrib"
 
-- name: detect database cluster
-  stat:
-    path: "/var/lib/pgsql/{{ PGSQL_VERSION }}/data/PG_VERSION"
-  register: dbcluster
+- name: set postgres database base directory as facts
+  set_fact:
+    pgsql_base_dir: "/var/lib/pgsql/{{ PGSQL_VERSION }}"
+  when: pgsql_base_dir is undefined
 
-- name: setup database cluster
-  command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/{{ PGSQL_PACKAGE_BASE }}-setup initdb"
-  when: not dbcluster.stat.exists
+- name: set postgres database directories as facts
+  set_fact:
+    pgsql_data_dir: "{{ pgsql_base_dir }}/data"
+    pgsql_archive_dir: "{{ pgsql_base_dir }}/archive"
+    pgsql_backup_dir: "{{ pgsql_base_dir }}/backups"
 
-- name: create archive dir
+- name: create postgres database directories
   file:
-    path: "/var/lib/pgsql/{{ PGSQL_VERSION }}/archive"
+    path: "{{ item }}"
     state: directory
     owner: postgres
     group: postgres
     mode: '0700'
+  with_items:
+    - "{{ pgsql_base_dir }}"
+    - "{{ pgsql_data_dir }}"
+    - "{{ pgsql_archive_dir }}"
+    - "{{ pgsql_backup_dir }}"
+
+- name: detect database cluster
+  stat:
+    path: "{{ pgsql_data_dir }}/PG_VERSION"
+  register: dbcluster
+
+- name: setup database cluster
+  become: yes
+  become_user: postgres
+  command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/initdb -E UTF8 --locale=C -D {{ pgsql_data_dir }}"
   when: not dbcluster.stat.exists
 
 - name: set postgresql.conf
   blockinfile:
-    dest: "/var/lib/pgsql/{{ PGSQL_VERSION }}/data/postgresql.conf"
+    dest: "{{ pgsql_data_dir }}/postgresql.conf"
     backup: true
     block: |
       listen_addresses = '*'
       port = {{ pgsql_listen_port }}
       wal_level = replica
       archive_mode = on
-      archive_command = 'cp %p /var/lib/pgsql/{{ PGSQL_VERSION }}/archive/%f'
-      max_wal_senders = 5
+      archive_command = 'cp %p {{ pgsql_archive_dir }}/%f'
+      max_wal_senders = 2
       hot_standby = on
     owner: postgres
     group: postgres
@@ -67,7 +84,7 @@
 - name: set pg_hba conf
   lineinfile:
     backup: true
-    path: '/var/lib/pgsql/{{ PGSQL_VERSION }}/data/pg_hba.conf'
+    path: '{{ pgsql_data_dir }}/pg_hba.conf'
     regexp: '^host {{ pgsql_database }} {{ pgsql_user }} all md5$'
     line: 'host {{ pgsql_database }} {{ pgsql_user }} all md5'
     owner: postgres
