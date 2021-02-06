@@ -34,63 +34,100 @@
     - "{{ pgsql_archive_dir }}"
     - "{{ pgsql_backup_dir }}"
 
-- name: detect database cluster
-  stat:
-    path: "{{ pgsql_data_dir }}/PG_VERSION"
-  register: dbcluster
-
-- name: setup database cluster
-  become: yes
-  become_user: postgres
-  command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/initdb -E UTF8 --locale=C -D {{ pgsql_data_dir }}"
-  when: not dbcluster.stat.exists
-
-- name: set postgresql.conf
-  blockinfile:
-    dest: "{{ pgsql_data_dir }}/postgresql.conf"
-    backup: true
-    block: |
-      listen_addresses = '*'
-      port = {{ pgsql_listen_port }}
-      wal_level = replica
-      archive_mode = on
-      archive_command = 'cp %p {{ pgsql_archive_dir }}/%f'
-      max_wal_senders = 2
-      hot_standby = on
+- name: set passwd file
+  lineinfile:
+    path: '/var/lib/pgsql/.pgpass'
+    create: yes
+    line: '*:*:*:{{ pgsql_replication_user }}:{{ pgsql_replication_passwd }}'
     owner: postgres
     group: postgres
     mode: '0600'
-  notify: restart postgresql service
 
-- name: start postgresql service
-  service:
+- block:
+  - name: detect database cluster
+    stat:
+      path: "{{ pgsql_data_dir }}/PG_VERSION"
+    register: dbcluster
+
+  - name: setup database cluster
+    become: yes
+    become_user: postgres
+    command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/initdb -E UTF8 --locale=C -D {{ pgsql_data_dir }}"
+    when: not dbcluster.stat.exists
+
+  - name: set postgresql.conf
+    blockinfile:
+      path: "{{ pgsql_data_dir }}/postgresql.conf"
+      backup: true
+      block: |
+        listen_addresses = '*'
+        port = {{ pgsql_listen_port }}
+        wal_level = replica
+        archive_mode = on
+        archive_command = 'cp %p {{ pgsql_archive_dir }}/%f'
+        max_wal_senders = 2
+        hot_standby = on
+      owner: postgres
+      group: postgres
+      mode: '0600'
+    notify: restart postgresql service
+
+  - name: copy pg_hba conf
+    template:
+      src: pg_hba.conf.j2 
+      dest: '{{ pgsql_data_dir }}/pg_hba.conf'
+      owner: postgres
+      group: postgres
+      mode: '0600'
+    notify: restart postgresql service
+
+  - name: start postgresql service
+    service:
       name: "postgresql-{{ PGSQL_VERSION }}"
       state: started
       enabled: yes
-  when: not dbcluster.stat.exists
+    when: not dbcluster.stat.exists
+ 
+  - name: create role
+    become: yes
+    become_user: postgres
+    command: psql -c "CREATE ROLE {{ pgsql_user }} LOGIN PASSWORD '{{ pgsql_passwd }}';"
+    when: not dbcluster.stat.exists
 
-- name: create role
-  become: yes
-  become_user: postgres
-  command: psql -c "CREATE ROLE {{ pgsql_user }} LOGIN PASSWORD '{{ pgsql_passwd }}';"
-  when: not dbcluster.stat.exists
+  - name: create database
+    become: yes
+    become_user: postgres
+    command: psql -c "CREATE DATABASE {{ pgsql_database }};"
+    when: not dbcluster.stat.exists
 
-- name: create database
-  become: yes
-  become_user: postgres
-  command: psql -c "CREATE DATABASE {{ pgsql_database }};"
-  when: not dbcluster.stat.exists
+  - name: create replication user # noqa 301
+    become: yes
+    become_user: postgres
+    command: psql -c "CREATE ROLE {{ pgsql_replication_user }} LOGIN REPLICATION PASSWORD '{{ pgsql_replication_passwd }}';"
+    when: not dbcluster.stat.exists and pgsql_cluster_hostnames != None
 
-- name: set pg_hba conf
-  lineinfile:
-    backup: true
-    path: '{{ pgsql_data_dir }}/pg_hba.conf'
-    regexp: '^host {{ pgsql_database }} {{ pgsql_user }} all md5$'
-    line: 'host {{ pgsql_database }} {{ pgsql_user }} all md5'
-    owner: postgres
-    group: postgres
-    mode: '0600'
-  notify: restart postgresql service
+  when: pgsql_cluster_hostnames == None or inventory_hostname == pgsql_cluster_hostnames[0]
+
+- block:
+  - name: detect database cluster
+    stat:
+      path: "{{ pgsql_data_dir }}/PG_VERSION"
+    register: dbcluster
+
+  - name: setup database cluster
+    become: yes
+    become_user: postgres
+    command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_basebackup -x -h {{ hostvars[pgsql_cluster_hostnames[0]].ansible_host }} -p {{ pgsql_listen_port }} -U {{ pgsql_replication_user }} -D {{ pgsql_data_dir }} -P -R"
+    when: not dbcluster.stat.exists
+
+  - name: start postgresql service
+    service:
+      name: "postgresql-{{ PGSQL_VERSION }}"
+      state: started
+      enabled: yes
+    when: not dbcluster.stat.exists
+
+  when: pgsql_cluster_hostnames != None and inventory_hostname != pgsql_cluster_hostnames[0]
 
   #- include_tasks: keepalived.yml
   #  when: pgsql_cluster != None and not dbcluster.stat.exists

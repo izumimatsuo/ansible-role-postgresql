@@ -3,7 +3,13 @@ pgsql_listen_port: 5432
 pgsql_user: 'developer'
 pgsql_passwd: 'password'
 pgsql_database: 'development'
-pgsql_cluster: # {virtual_ipaddr: '192.168.33.10', check_interface: 'eth1'}
+pgsql_cluster_hostnames:
 pgsql_replication_user: 'repl_user'
 pgsql_replication_passwd: 'password'
-pgsql_replication_allow_ipaddr: # ['192.168.33.11/32', '192.168.33.12/32'] or '192.168.33.0/24'
+pgsql_replication_allow_ipaddr: # ['192.168.33.11/32', '192.168.33.12/32'] or '192.168.33.0/26'
+
+
+#pacemaker_pcs_controller_nodename: "{{ postgresql_master_nodename }}"
+#pacemaker_pcs_pgsql_config_file_path: /var/lib/pacemaker/cib/cib-pgsql.xml
+#pacemaker_cluster_name: pgsqlcluster
+#pacemaker_hacluster_password: "{{ development.secrets.pacemaker_hacluster_password }}"
