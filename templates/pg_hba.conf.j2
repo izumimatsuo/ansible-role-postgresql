@@ -88,6 +88,7 @@ host    all             all             ::1/128                 ident
 #local   replication     postgres                                peer
 #host    replication     postgres        127.0.0.1/32            ident
 #host    replication     postgres        ::1/128                 ident
+host    {{ pgsql_database }}     {{ pgsql_user }}        0.0.0.0/0     md5
 {% if pgsql_cluster_hostnames != None %}
 host    replication     {{ pgsql_replication_user }}       {{ pgsql_replication_allow_ipaddr }}         md5
 {% endif %}
