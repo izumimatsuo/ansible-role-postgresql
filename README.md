@@ -2,10 +2,11 @@
 
 CentOS 7 に postgresql を導入する ansible role です。
 
-pgsql_cluster_hostnames および pgsql_replication_* を設定することで非同期レプリケーションに必要な設定をおこなう
+pgsql_cluster_hostnames および pgsql_replication_* を設定することでレプリケーション機能を設定できる
 
 - レプリケーションユーザの登録
 - pg_hab.conf の設定
+- レプリケーションは非同期に設定
 
 pacemaker_cluster_info を設定することで上記に加えて 1+1 (Master/Standby) クラスタを構築できる
 
