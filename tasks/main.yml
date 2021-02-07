@@ -134,6 +134,7 @@
     service:
       name: "postgresql-{{ PGSQL_VERSION }}"
       state: stopped
+      enabled: no
 
   - include_tasks: pacemaker.yml
 
