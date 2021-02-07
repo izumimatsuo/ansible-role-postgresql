@@ -34,7 +34,7 @@
     - "{{ pgsql_archive_dir }}"
     - "{{ pgsql_backup_dir }}"
 
-- name: set passwd file
+- name: set dot passwd file
   lineinfile:
     path: '/var/lib/pgsql/.pgpass'
     create: yes
@@ -109,18 +109,18 @@
   when: pgsql_cluster_hostnames == None or inventory_hostname == pgsql_cluster_hostnames[0]
 
 - block:
-  - name: detect database cluster
+  - name: detect database cluster (standby)
     stat:
       path: "{{ pgsql_data_dir }}/PG_VERSION"
     register: dbcluster
 
-  - name: setup database cluster
+  - name: setup database cluster (standby)
     become: yes
     become_user: postgres
     command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_basebackup -x -h {{ hostvars[pgsql_cluster_hostnames[0]].ansible_host }} -p {{ pgsql_listen_port }} -U {{ pgsql_replication_user }} -D {{ pgsql_data_dir }} -P -R"
     when: not dbcluster.stat.exists
 
-  - name: start postgresql service
+  - name: start postgresql service (standby)
     service:
       name: "postgresql-{{ PGSQL_VERSION }}"
       state: started
@@ -129,6 +129,12 @@
 
   when: pgsql_cluster_hostnames != None and inventory_hostname != pgsql_cluster_hostnames[0]
 
-  #- include_tasks: keepalived.yml
-  #  when: pgsql_cluster != None and not dbcluster.stat.exists
-  #  tags: postgresql
+- block:
+  - name: stop postgresql service
+    service:
+      name: "postgresql-{{ PGSQL_VERSION }}"
+      state: stopped
+
+  - include_tasks: pacemaker.yml
+
+  when: pgsql_cluster_hostnames != None and pacemaker_cluster_info != None

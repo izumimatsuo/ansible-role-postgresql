@@ -2,41 +2,37 @@
 
 CentOS 7 に postgresql を導入する ansible role です。
 
-pg_cluster および pg_replication_* を設定することでサーバクラスタ (と同期レプリケーション）に必要な設定をおこなう
+pgsql_cluster_hostnames および pgsql_replication_* を設定することで非同期レプリケーションに必要な設定をおこなう
 
 - レプリケーションユーザの登録
-- pg_hab.conf および postgresql.conf の設定追加
-- 運用に必要なツールの導入
-- クラスタリングミドル (keepalived) の導入
+- pg_hab.conf の設定
 
-起動時の動作は以下となる
+pacemaker_cluster_info を設定することで上記に加えて 1+1 (Master/Standby) クラスタを構築できる
 
-1. 1台目の keepalived 起動 (MASTER_STATE へ遷移)
-1. VIP を追加
-1. pg_start_replication.sh を実行 (postgresql が primary で起動)
-1. 非同期レプリケーション開始
-1. 2台目の keepalived 起動 (BACKUP_STATE へ遷移)
-1. pg_join_replication.sh を実行 (postgresql が secondary で起動)
-1. primary はレプリケーション動作を非同期から同期へ移行
+- クラスタリングミドルは pacemaker/corosync を適用
+- レプリケーションは同期に設定
 
-障害時の動作は以下のとおり
+1+1 (Master/Standby) クラスタでの障害時の動作は以下のとおり
 
-1. secandary が障害の場合は VIP は移動せず、primary は非同期レプリケーションに移行
-1. secandary が復旧すると primary は再度、同期レプリケーションへ移行
-1. primary で障害の場合は secandary へ VIP が移動して非同期レプリケーションへ移行
-1. 旧primary が復旧すると、新secandary として組み込まれ同期レプケーションへ移行
+1. Standby が障害の場合は VIP は移動せず、Master は非同期レプリケーションへ移行
+1. Standby を復旧すると Master は再度、同期レプリケーションへ移行
+1. Master で障害の場合は Standby へ VIP が移動して非同期レプリケーションへ移行
+1. 旧Master を復旧すると、新Standby として組み込まれ同期レプケーションへ移行
 
 ## 設定項目
 
 以下の設定項目は上書き可能。
 
-| 項目名                | デフォルト値 | 説明       |
-| --------------------- | ------------ | ---------- |
-| pg_listen_port        | 5432         | ポート番号 |
-| pg_user               | developer    | データベースユーザ |
-| pg_passwd             | password     | データベースユーザのパスワード |
-| pg_database           | development  | データベース名 |
-| pg_cluster            | None         | クラスタ設定情報 # {virtual_ipaddr: '192.168.33.10', check_interface: 'eth1'} |
-| pg_replication_user   | repl_user    | レプリケーションユーザ |
-| pg_replication_passwd | password     | レプリケーションユーザのパスワード |
-| pg_replication_allow_ipaddr | none   | レプリケーション許可IPアドレス |
+| 項目名                   | デフォルト値 | 説明       |
+| ------------------------ | ------------ | ---------- |
+| pgsql_listen_port        | 5432         | ポート番号 |
+| pgsql_user               | developer    | データベースユーザ |
+| pgsql_passwd             | password     | データベースユーザのパスワード |
+| pgsql_database           | development  | データベース名 |
+| pgsql_cluster_hostnames  | None         | クラスタを構成するサーバ（inventory_name）のリスト |
+| pgsql_replication_user   | repl_user    | レプリケーションユーザ |
+| pgsql_replication_passwd | password     | レプリケーションユーザのパスワード |
+| pgsql_replication_allow_ipaddr | None   | レプリケーション許可IPアドレス |
+| pacemaker_cluster_info   | None         | VIP情報 |
+| pacemaker_cluster_name   | pgsqlcluster | クラスタ名 |
+| pacemaker_hacluster_password | password | クラスタ管理ユーザのパスワード |
