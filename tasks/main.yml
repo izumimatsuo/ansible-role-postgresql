@@ -43,48 +43,7 @@
     group: postgres
     mode: '0600'
 
-- block:
-  - name: generate ssh key pair
-    become: yes
-    become_user: postgres
-    command: ssh-keygen -f {{ pgsql_peer_identity_file }} -q -N ""
-    args:
-      creates: '{{ pgsql_peer_identity_file }}'
-
-  - name: copy ssh private key
-    slurp: src={{ pgsql_peer_identity_file }}
-    register: ssh_private_key
-
-  - name: copy ssh public key
-    slurp: src={{ pgsql_peer_identity_file }}.pub
-    register: ssh_public_key
-
-  when: pgsql_cluster_hostnames != None and inventory_hostname == pgsql_cluster_hostnames[0]
-
-- block:
-  - name: create ssh directory
-    file:
-      path: /var/lib/pgsql/.ssh
-      state: directory
-      owner: postgres
-      group: postgres
-      mode: '0700'
-
-  - name: add ssh privete key
-    lineinfile:
-      path: '{{ pgsql_peer_identity_file }}'
-      create: yes
-      line: '{{ hostvars[pgsql_cluster_hostnames[0]]["ssh_private_key"]["content"] | b64decode }}'
-      insertafter: EOF
-      owner: postgres
-      group: postgres
-      mode: '0600'
-  when: pgsql_cluster_hostnames != None and inventory_hostname != pgsql_cluster_hostnames[0]
-
-- name: add ssh public key
-  authorized_key:
-    user: postgres
-    key: '{{ hostvars[pgsql_cluster_hostnames[0]]["ssh_public_key"]["content"] | b64decode }}'
+- include_tasks: ssh_peer.yml
   when: pgsql_cluster_hostnames != None
 
 - block:
