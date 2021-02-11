@@ -2,7 +2,7 @@
 
 CentOS 7 に postgresql を導入する ansible role です。
 
-pgsql_cluster_hostnames および pgsql_replication_* を設定することでレプリケーション機能を設定できる
+pgsql_cluster_hostnames を設定することでレプリケーション機能を設定できる
 
 - レプリケーションユーザの登録
 - 管理ユーザ（postgres）のssh公開鍵認証の設置
@@ -29,12 +29,11 @@ pacemaker_cluster_info を設定することで上記に加えて 1+1 (Master/St
 | ------------------------ | ------------ | ---------- |
 | pgsql_listen_port        | 5432         | ポート番号 |
 | pgsql_user               | developer    | データベースユーザ |
-| pgsql_passwd             | password     | データベースユーザのパスワード |
-| pgsql_database           | development  | データベース名 |
+| pgsql_user_passwd        | password     | データベースユーザのパスワード |
+| pgsql_database_name      | development  | データベース名 |
 | pgsql_cluster_hostnames  | None         | クラスタを構成するサーバ（inventory_name）のリスト |
+| pgsql_cluster_info       | None         | クラスタ情報設定 例 {virtual_ipaddr: xxx, check_interface: yyy} |
 | pgsql_replication_user   | repl_user    | レプリケーションユーザ |
 | pgsql_replication_passwd | password     | レプリケーションユーザのパスワード |
-| pgsql_replication_allow_ipaddr | None   | レプリケーション許可IPアドレス |
-| pacemaker_cluster_info   | None         | VIP情報 |
 | pacemaker_cluster_name   | pgsqlcluster | クラスタ名 |
 | pacemaker_hacluster_password | password | クラスタ管理ユーザのパスワード |

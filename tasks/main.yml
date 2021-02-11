@@ -94,13 +94,13 @@
   - name: create role
     become: yes
     become_user: postgres
-    command: psql -c "CREATE ROLE {{ pgsql_user }} LOGIN PASSWORD '{{ pgsql_passwd }}';"
+    command: psql -c "CREATE ROLE {{ pgsql_user }} LOGIN PASSWORD '{{ pgsql_user_passwd }}';"
     when: not dbcluster.stat.exists
 
   - name: create database
     become: yes
     become_user: postgres
-    command: psql -c "CREATE DATABASE {{ pgsql_database }};"
+    command: psql -c "CREATE DATABASE {{ pgsql_database_name }};"
     when: not dbcluster.stat.exists
 
   - name: create replication user # noqa 301
@@ -141,4 +141,4 @@
 
   - include_tasks: pacemaker.yml
 
-  when: pgsql_cluster_hostnames != None and pacemaker_cluster_info != None
+  when: pgsql_cluster_hostnames != None and pgsql_cluster_info != None
