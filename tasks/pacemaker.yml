@@ -1,8 +1,15 @@
 ---
 - name: update /etc/hosts
-  template:
-    src: hosts.j2
-    dest: /etc/hosts
+  blockinfile:
+    path: /etc/hosts
+    insertafter: EOF
+    marker: "# {mark} ANSIBLE MANAGED BLOCK (pgsql cluster hostnames) "
+    block: |
+      {% for host in pgsql_cluster_hostnames %}
+      {% if host in hostvars %}
+      {{ hostvars[host].ansible_host }}   {{ host }}
+      {% endif %}
+      {% endfor %}
 
 - name: install pacemaker/corosync/pcs
   yum:
