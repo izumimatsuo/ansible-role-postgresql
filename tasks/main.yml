@@ -107,7 +107,7 @@
     become: yes
     become_user: postgres
     command: psql -c "CREATE ROLE {{ pgsql_replication_user }} LOGIN REPLICATION PASSWORD '{{ pgsql_replication_passwd }}';"
-    when: not dbcluster.stat.exists and pgsql_cluster_hostnames != None
+    when: not dbcluster.stat.exists
 
   when: pgsql_cluster_hostnames == None or inventory_hostname == pgsql_cluster_hostnames[0]
 
