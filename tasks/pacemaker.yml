@@ -37,18 +37,18 @@
     args:
       creates: /etc/corosync/corosync.conf
 
-  - name: check cluster
+  - name: check pcs cluster
     command: pcs status
     register: pcs_status
     failed_when: pcs_status.rc not in [0, 1]
     changed_when: no
     check_mode: no
 
-  - name: start cluster
+  - name: start pcs cluster
     command: pcs cluster start --all
     when: pcs_status.rc != 0
 
-- name: create cib
+- name: create pcs cib
   shell: |
     pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} property set no-quorum-policy="ignore" && \
     pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} property set stonith-enabled="false" && \
