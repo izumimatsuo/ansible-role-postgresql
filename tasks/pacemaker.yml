@@ -20,7 +20,7 @@
 - name: set password (hacluster user)
   user:
     name: hacluster
-    password: "{{ pacemaker_hacluster_password | password_hash('sha512') }}"
+    password: "{{ pacemaker_hacluster_password | password_hash('sha512', pacemaker_hacluster_password) }}"
 
 - block:
   - name: detect corosync.conf
