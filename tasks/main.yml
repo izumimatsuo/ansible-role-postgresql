@@ -43,22 +43,27 @@
     group: postgres
     mode: '0600'
 
+- name: set postgres cluster hostnames
+  set_fact:
+    pgsql_cluster_hostnames: "{{ ansible_play_hosts }}"
+  when: ansible_play_hosts | length > 1
+
 - include_tasks: ssh_peer.yml
-  when: pgsql_cluster_hostnames != None
+  when: pgsql_cluster_hostnames is defined 
 
 - block:
-  - name: detect database cluster
+  - name: detect database cluster {{ '(master)' if pgsql_cluster_hostnames is defined }}
     stat:
       path: "{{ pgsql_data_dir }}/PG_VERSION"
     register: dbcluster
 
-  - name: setup database cluster
+  - name: setup database cluster {{ '(master)' if pgsql_cluster_hostnames is defined }}
     become: yes
     become_user: postgres
     command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/initdb -E UTF8 --locale=C -D {{ pgsql_data_dir }}"
     when: not dbcluster.stat.exists
 
-  - name: set postgresql.conf
+  - name: set postgresql.conf {{ '(master)' if pgsql_cluster_hostnames is defined }}
     blockinfile:
       path: "{{ pgsql_data_dir }}/postgresql.conf"
       backup: true
@@ -75,7 +80,7 @@
       mode: '0600'
     notify: restart postgresql service
 
-  - name: copy pg_hba conf
+  - name: copy pg_hba conf {{ '(master)' if pgsql_cluster_hostnames is defined }}
     template:
       src: pg_hba.conf.j2 
       dest: '{{ pgsql_data_dir }}/pg_hba.conf'
@@ -84,32 +89,32 @@
       mode: '0600'
     notify: restart postgresql service
 
-  - name: start postgresql service
+  - name: start postgresql service {{ '(master)' if pgsql_cluster_hostnames is defined }}
     service:
       name: "postgresql-{{ PGSQL_VERSION }}"
       state: started
       enabled: yes
     when: not dbcluster.stat.exists
  
-  - name: create role
+  - name: create role {{ '(master)' if pgsql_cluster_hostnames is defined }}
     become: yes
     become_user: postgres
     command: psql -c "CREATE ROLE {{ pgsql_user }} LOGIN PASSWORD '{{ pgsql_user_passwd }}';"
     when: not dbcluster.stat.exists
 
-  - name: create database
+  - name: create database {{ '(master)' if pgsql_cluster_hostnames is defined }}
     become: yes
     become_user: postgres
     command: psql -c "CREATE DATABASE {{ pgsql_database_name }};"
     when: not dbcluster.stat.exists
 
-  - name: create replication user # noqa 301
+  - name: create replication user {{ '(master)' if pgsql_cluster_hostnames is defined }} # noqa 301
     become: yes
     become_user: postgres
     command: psql -c "CREATE ROLE {{ pgsql_replication_user }} LOGIN REPLICATION PASSWORD '{{ pgsql_replication_passwd }}';"
     when: not dbcluster.stat.exists
 
-  when: pgsql_cluster_hostnames == None or inventory_hostname == pgsql_cluster_hostnames[0]
+  when: pgsql_cluster_hostnames is undefined or inventory_hostname == pgsql_cluster_hostnames[0]
 
 - block:
   - name: detect database cluster (standby)
@@ -130,7 +135,7 @@
       enabled: yes
     when: not dbcluster.stat.exists
 
-  when: pgsql_cluster_hostnames != None and inventory_hostname != pgsql_cluster_hostnames[0]
+  when: pgsql_cluster_hostnames is defined and inventory_hostname != pgsql_cluster_hostnames[0]
 
 - block:
   - name: stop postgresql service
@@ -141,4 +146,4 @@
 
   - include_tasks: pacemaker.yml
 
-  when: pgsql_cluster_hostnames != None and pgsql_cluster_info != None
+  when: pgsql_cluster_hostnames is defined and pacemaker_cluster_info != None
