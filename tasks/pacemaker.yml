@@ -4,11 +4,10 @@
     src: hosts.j2
     dest: /etc/hosts
 
-- name: install pacemaker/corosync/pcs
+- name: install pacemaker/pcs
   yum:
     name:
       - pacemaker
-      - corosync
       - pcs
 
 - name: start pcsd service
@@ -61,10 +60,10 @@
        tmpdir="/var/run/postgresql" \
        rep_mode="sync" \
        "node_list={{ pgsql_cluster_hostnames | join(' ') }}" \
-       master_ip="{{ pgsql_cluster_info.virtual_ipaddr }}" \
+       master_ip="{{ pacemaker_cluster_info.virtual_ipaddr }}" \
        repuser="{{ pgsql_replication_user }}" \
        primary_conninfo_opt="keepalives_idle=60 keepalives_interval=5 keepalives_count=5" \
-       restore_command="scp {{ pgsql_cluster_info.virtual_ipaddr }}:{{ pgsql_archive_dir }}/%f %p" \
+       restore_command="scp {{ pacemaker_cluster_info.virtual_ipaddr }}:{{ pgsql_archive_dir }}/%f %p" \
        stop_escalate="110" \
        \
        op start timeout=120s on-fail=restart \
@@ -76,7 +75,7 @@
        meta migration-threshold=2 \
        --master clone-max=2 clone-node-max=1 && \
     pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} resource create master-ip ocf:heartbeat:IPaddr2 \
-       ip="{{ pgsql_cluster_info.virtual_ipaddr }}" iflabel="master" \
+       ip="{{ pacemaker_cluster_info.virtual_ipaddr }}" iflabel="master" \
        op monitor interval=5s && \
     pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} constraint colocation add master-ip \
        with master pgsql-master && \
