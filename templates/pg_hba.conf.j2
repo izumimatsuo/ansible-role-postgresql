@@ -89,7 +89,7 @@ host    all             all             ::1/128                 ident
 #host    replication     postgres        127.0.0.1/32            ident
 #host    replication     postgres        ::1/128                 ident
 host    {{ pgsql_database_name }}     {{ pgsql_user }}       0.0.0.0/0               md5
-{% if pgsql_cluster_hostnames is defined %}
+{% if pgsql_replication_master is defined %}
 {% for host in pgsql_replication_hosts %}
 host    replication     {{ pgsql_replication_user }}       {{ hostvars[host].ansible_host if hostvars[host] is defined else host }}/32        md5
 {% endfor %}
