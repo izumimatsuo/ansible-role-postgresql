@@ -1,6 +1,6 @@
 127.0.0.1   localhost
 
-{% for host in pgsql_cluster_hostnames %}
+{% for host in ansible_play_hosts %}
 {{ hostvars[host].ansible_host }}   {{ host }}
 {% endfor %}
 
