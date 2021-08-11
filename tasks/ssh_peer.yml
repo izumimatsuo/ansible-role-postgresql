@@ -23,7 +23,7 @@
     slurp: src={{ postgres_identity_file }}.pub
     register: ssh_public_key
 
-  when: inventory_hostname == pgsql_cluster_hostnames[0]
+  when: inventory_hostname == pgsql_cluster_hostnames
 
 - block:
   - name: create dot ssh directory
@@ -43,19 +43,19 @@
     lineinfile:
       path: '{{ postgres_identity_file }}'
       create: yes
-      line: '{{ hostvars[pgsql_cluster_hostnames[0]]["ssh_private_key"]["content"] | b64decode }}'
+      line: '{{ hostvars[pgsql_cluster_hostnames]["ssh_private_key"]["content"] | b64decode }}'
       insertafter: EOF
       owner: postgres
       group: postgres
       mode: '0600'
     when: not identity_file.stat.exists
 
-  when: inventory_hostname != pgsql_cluster_hostnames[0]
+  when: inventory_hostname != pgsql_cluster_hostnames
 
 - name: add ssh public key
   authorized_key:
     user: postgres
-    key: '{{ hostvars[pgsql_cluster_hostnames[0]]["ssh_public_key"]["content"] | b64decode }}'
+    key: '{{ hostvars[pgsql_cluster_hostnames]["ssh_public_key"]["content"] | b64decode }}'
 
 - name: set ssh config (StrictHostKeyChecking no)
   blockinfile:

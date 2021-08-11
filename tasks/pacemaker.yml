@@ -28,11 +28,11 @@
   register: corosync_conf
 
 - name: auth cluster nodes
-  command: "pcs cluster auth -u hacluster -p {{ pacemaker_hacluster_password }} {{ pgsql_cluster_hostnames | join(' ') }}"
+  command: "pcs cluster auth -u hacluster -p {{ pacemaker_hacluster_password }} {{ pacemaker_cluster_hosts | join(' ') | replace(',',' ') }}"
   when: not corosync_conf.stat.exists
 
 - name: setup cluster
-  command: "pcs cluster setup --name {{ pacemaker_cluster_name }} {{ pgsql_cluster_hostnames | join(' ') }}"
+  command: "pcs cluster setup --name {{ pacemaker_cluster_name }} {{ pacemaker_cluster_hosts | join(' ') }}"
   args:
     creates: /etc/corosync/corosync.conf
 
@@ -59,7 +59,7 @@
        config="{{ pgsql_data_dir }}/postgresql.conf" \
        tmpdir="/var/run/postgresql" \
        rep_mode="sync" \
-       "node_list={{ pgsql_cluster_hostnames | join(' ') }}" \
+       "node_list={{ ansible_play_hosts | join(' ') }}" \
        master_ip="{{ pacemaker_cluster_info.virtual_ipaddr }}" \
        repuser="{{ pgsql_replication_user }}" \
        primary_conninfo_opt="keepalives_idle=60 keepalives_interval=5 keepalives_count=5" \
@@ -82,13 +82,13 @@
     pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} constraint order start master-ip \
        then promote pgsql-master && \
     pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} constraint location pgsql-master prefers \
-       {% for name in pgsql_cluster_hostnames %} {{ name }}=0{% endfor %} && \
+       {% for name in ansible_play_hosts %} {{ name }}=0{% endfor %} && \
     pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} constraint location master-ip prefers \
-       {% for name in pgsql_cluster_hostnames %} {{ name }}=0{% endfor %} && \
+       {% for name in ansible_play_hosts %} {{ name }}=0{% endfor %} && \
     pcs cluster cib-push {{ pacemaker_pcs_pgsql_config_file_path }} && \
     pcs cluster cib {{ pacemaker_pcs_pgsql_config_file_path }}
   args:
     creates: "{{ pacemaker_pcs_pgsql_config_file_path }}"
 
   run_once: true
-  delegate_to: "{{ pgsql_cluster_hostnames[0] }}"
+  delegate_to: "{{ pgsql_cluster_hostnames }}"
