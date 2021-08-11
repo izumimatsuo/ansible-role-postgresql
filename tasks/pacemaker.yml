@@ -4,10 +4,11 @@
     src: hosts.j2
     dest: /etc/hosts
 
-- name: install pacemaker/pcs
+- name: install pacemaker/corosync/pcs
   yum:
     name:
       - pacemaker
+      - corosync
       - pcs
 
 - name: start pcsd service
@@ -21,33 +22,32 @@
     name: hacluster
     password: "{{ pacemaker_hacluster_password | password_hash('sha512', pacemaker_hacluster_password) }}"
 
-- block:
-  - name: detect corosync.conf
-    stat:
-      path: /etc/corosync/corosync.conf
-    register: corosync_conf
+- name: detect corosync.conf
+  stat:
+    path: /etc/corosync/corosync.conf
+  register: corosync_conf
 
-  - name: set cluster auth
-    command: "pcs cluster auth -u hacluster -p {{ pacemaker_hacluster_password }} {{ pgsql_cluster_hostnames | join(' ') }}"
-    when: not corosync_conf.stat.exists
+- name: auth cluster nodes
+  command: "pcs cluster auth -u hacluster -p {{ pacemaker_hacluster_password }} {{ pgsql_cluster_hostnames | join(' ') }}"
+  when: not corosync_conf.stat.exists
 
-  - name: setup cluster
-    command: "pcs cluster setup --name {{ pacemaker_cluster_name }} {{ pgsql_cluster_hostnames | join(' ') }}"
-    args:
-      creates: /etc/corosync/corosync.conf
+- name: setup cluster
+  command: "pcs cluster setup --name {{ pacemaker_cluster_name }} {{ pgsql_cluster_hostnames | join(' ') }}"
+  args:
+    creates: /etc/corosync/corosync.conf
 
-  - name: check pcs cluster
-    command: pcs status
-    register: pcs_status
-    failed_when: pcs_status.rc not in [0, 1]
-    changed_when: no
-    check_mode: no
+- name: check cluster status
+  command: pcs status
+  register: pcs_status
+  failed_when: pcs_status.rc not in [0, 1]
+  changed_when: no
+  check_mode: no
 
-  - name: start pcs cluster
-    command: pcs cluster start --all
-    when: pcs_status.rc != 0
+- name: start cluster
+  command: pcs cluster start --all
+  when: pcs_status.rc != 0
 
-- name: create pcs cib
+- name: setup pacemaker cib
   shell: |
     pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} property set no-quorum-policy="ignore" && \
     pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} property set stonith-enabled="false" && \
