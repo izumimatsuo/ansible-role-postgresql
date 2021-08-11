@@ -49,9 +49,9 @@
 
 - name: setup pacemaker cib
   shell: |
-    pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} property set no-quorum-policy="ignore" && \
-    pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} property set stonith-enabled="false" && \
-    pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} resource create pgsql ocf:heartbeat:pgsql \
+    pcs -f {{ pacemaker_config_file_path }} property set no-quorum-policy="ignore" && \
+    pcs -f {{ pacemaker_config_file_path }} property set stonith-enabled="false" && \
+    pcs -f {{ pacemaker_config_file_path }} resource create pgsql ocf:heartbeat:pgsql \
        pgctl="/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_ctl" \
        psql="/usr/pgsql-{{ PGSQL_VERSION }}/bin/psql" \
        "pgdata={{ pgsql_data_dir }}" \
@@ -74,21 +74,21 @@
        op demote timeout=120s on-fail=restart \
        meta migration-threshold=2 \
        --master clone-max=2 clone-node-max=1 && \
-    pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} resource create master-ip ocf:heartbeat:IPaddr2 \
+    pcs -f {{ pacemaker_config_file_path }} resource create master-ip ocf:heartbeat:IPaddr2 \
        ip="{{ pacemaker_cluster_info.virtual_ipaddr }}" iflabel="master" \
        op monitor interval=5s && \
-    pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} constraint colocation add master-ip \
+    pcs -f {{ pacemaker_config_file_path }} constraint colocation add master-ip \
        with master pgsql-master && \
-    pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} constraint order start master-ip \
+    pcs -f {{ pacemaker_config_file_path }} constraint order start master-ip \
        then promote pgsql-master && \
-    pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} constraint location pgsql-master prefers \
+    pcs -f {{ pacemaker_config_file_path }} constraint location pgsql-master prefers \
        {% for name in ansible_play_hosts %} {{ name }}=0{% endfor %} && \
-    pcs -f {{ pacemaker_pcs_pgsql_config_file_path }} constraint location master-ip prefers \
+    pcs -f {{ pacemaker_config_file_path }} constraint location master-ip prefers \
        {% for name in ansible_play_hosts %} {{ name }}=0{% endfor %} && \
-    pcs cluster cib-push {{ pacemaker_pcs_pgsql_config_file_path }} && \
-    pcs cluster cib {{ pacemaker_pcs_pgsql_config_file_path }}
+    pcs cluster cib-push {{ pacemaker_config_file_path }} && \
+    pcs cluster cib {{ pacemaker_config_file_path }}
   args:
-    creates: "{{ pacemaker_pcs_pgsql_config_file_path }}"
+    creates: "{{ pacemaker_config_file_path }}"
 
   run_once: true
-  delegate_to: "{{ pgsql_cluster_hostnames }}"
+  delegate_to: "{{ ansible_play_hosts[0] }}"
