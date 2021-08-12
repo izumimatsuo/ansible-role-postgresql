@@ -1,52 +1,4 @@
 ---
-- name: update /etc/hosts
-  template:
-    src: hosts.j2
-    dest: /etc/hosts
-
-- name: install pacemaker/corosync/pcs
-  yum:
-    name:
-      - pacemaker
-      - corosync
-      - pcs
-
-- name: start pcsd service
-  service:
-    name: pcsd
-    state: started
-    enabled: yes
-
-- name: set password (hacluster user)
-  user:
-    name: hacluster
-    password: "{{ pacemaker_hacluster_password | password_hash('sha512', pacemaker_hacluster_password) }}"
-
-- name: detect corosync.conf
-  stat:
-    path: /etc/corosync/corosync.conf
-  register: corosync_conf
-
-- name: auth cluster nodes
-  command: "pcs cluster auth -u hacluster -p {{ pacemaker_hacluster_password }} {{ pacemaker_cluster_hosts | join(' ') | replace(',',' ') }}"
-  when: not corosync_conf.stat.exists
-
-- name: setup cluster
-  command: "pcs cluster setup --name {{ pacemaker_cluster_name }} {{ pacemaker_cluster_hosts | join(' ') }}"
-  args:
-    creates: /etc/corosync/corosync.conf
-
-- name: check cluster status
-  command: pcs status
-  register: pcs_status
-  failed_when: pcs_status.rc not in [0, 1]
-  changed_when: no
-  check_mode: no
-
-- name: start cluster
-  command: pcs cluster start --all
-  when: pcs_status.rc != 0
-
 - name: setup pacemaker cib
   shell: |
     pcs -f {{ pacemaker_config_file_path }} property set no-quorum-policy="ignore" && \
@@ -54,16 +6,16 @@
     pcs -f {{ pacemaker_config_file_path }} resource create pgsql ocf:heartbeat:pgsql \
        pgctl="/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_ctl" \
        psql="/usr/pgsql-{{ PGSQL_VERSION }}/bin/psql" \
-       "pgdata={{ pgsql_data_dir }}" \
-       "logfile={{ pgsql_data_dir }}/startup.log" \
+       pgdata="{{ pgsql_data_dir }}" \
+       logfile="{{ pgsql_data_dir }}/startup.log" \
        config="{{ pgsql_data_dir }}/postgresql.conf" \
        tmpdir="/var/run/postgresql" \
        rep_mode="sync" \
-       "node_list={{ ansible_play_hosts | join(' ') }}" \
-       master_ip="{{ pacemaker_cluster_info.virtual_ipaddr }}" \
+       node_list="{{ ansible_play_hosts | join(' ') }}" \
+       master_ip="192.168.34.10" \
        repuser="{{ pgsql_replication_user }}" \
        primary_conninfo_opt="keepalives_idle=60 keepalives_interval=5 keepalives_count=5" \
-       restore_command="scp {{ pacemaker_cluster_info.virtual_ipaddr }}:{{ pgsql_archive_dir }}/%f %p" \
+       restore_command="scp 192.168.34.10:{{ pgsql_archive_dir }}/%f %p" \
        stop_escalate="110" \
        \
        op start timeout=120s on-fail=restart \
@@ -81,9 +33,18 @@
        with master pgsql-master && \
     pcs -f {{ pacemaker_config_file_path }} constraint order start master-ip \
        then promote pgsql-master && \
+    pcs -f {{ pacemaker_config_file_path }} resource create repl-ip ocf:heartbeat:IPaddr2 \
+       ip="192.168.34.10" iflabel="repl" \
+       op monitor interval=5s && \
+    pcs -f {{ pacemaker_config_file_path }} constraint colocation add repl-ip \
+       with master pgsql-master && \
+    pcs -f {{ pacemaker_config_file_path }} constraint order start repl-ip \
+       then promote pgsql-master && \
     pcs -f {{ pacemaker_config_file_path }} constraint location pgsql-master prefers \
        {% for name in ansible_play_hosts %} {{ name }}=0{% endfor %} && \
     pcs -f {{ pacemaker_config_file_path }} constraint location master-ip prefers \
+       {% for name in ansible_play_hosts %} {{ name }}=0{% endfor %} && \
+    pcs -f {{ pacemaker_config_file_path }} constraint location repl-ip prefers \
        {% for name in ansible_play_hosts %} {{ name }}=0{% endfor %} && \
     pcs cluster cib-push {{ pacemaker_config_file_path }} && \
     pcs cluster cib {{ pacemaker_config_file_path }}
