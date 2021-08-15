@@ -93,7 +93,7 @@
     service:
       name: "postgresql-{{ PGSQL_VERSION }}"
       state: started
-      enabled: yes
+      enabled: no
     when: not dbcluster.stat.exists
  
   - name: create role {{ '(master)' if pgsql_replication_master is defined }}
@@ -132,7 +132,7 @@
     service:
       name: "postgresql-{{ PGSQL_VERSION }}"
       state: started
-      enabled: yes
+      enabled: no
     when: not dbcluster.stat.exists
 
   when: pgsql_replication_master is defined and inventory_hostname != pgsql_replication_master
