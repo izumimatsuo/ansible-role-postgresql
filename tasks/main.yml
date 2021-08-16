@@ -72,9 +72,18 @@
         port = {{ pgsql_listen_port }}
         wal_level = replica
         archive_mode = on
-        archive_command = 'cp %p {{ pgsql_archive_dir }}/%f'
-        max_wal_senders = 2
+        archive_command = '/bin/cp %p {{ pgsql_archive_dir }}/%f'
+        max_wal_senders = 4
+        wal_keep_segments = 32
         hot_standby = on
+        max_standby_streaming_delay = -1
+        max_standby_archive_delay = -1
+        archive_mode = on
+        synchronous_commit = on
+        restart_after_crash = off
+        wal_sender_timeout = 20s
+        wal_receiver_status_interval = 5s
+        hot_standby_feedback = on
       owner: postgres
       group: postgres
       mode: '0600'
@@ -146,4 +155,4 @@
 
   - include_tasks: pacemaker.yml
 
-  when: pgsql_replication_master is defined and pacemaker_cluster_info != None
+  when: pgsql_replication_master is defined and pgsql_pacemaker_cluster_info.master.virtual_ipaddr is defined
