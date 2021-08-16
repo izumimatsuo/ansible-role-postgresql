@@ -1,50 +1,76 @@
 ---
-- name: setup pacemaker cib
-  shell: |
-    pcs -f {{ pacemaker_config_file_path }} property set no-quorum-policy="ignore" && \
-    pcs -f {{ pacemaker_config_file_path }} property set stonith-enabled="false" && \
-    \
-    pcs -f {{ pacemaker_config_file_path }} resource create master-vip ocf:heartbeat:IPaddr2 \
-      ip={{ pacemaker_cluster_info.virtual_ipaddr }} iflabel=master op monitor interval=5s && \
-    pcs -f {{ pacemaker_config_file_path }} resource create replica-vip ocf:heartbeat:IPaddr2 \
-      ip=192.168.33.14 iflabel=replica op monitor interval=5s && \
-    pcs -f {{ pacemaker_config_file_path }} resource create ping ocf:pacemaker:ping \
-      dampen=5s multiplier=100 host_list=8.8.8.8 --clone && \
-    pcs -f {{ pacemaker_config_file_path }} resource create pgsql ocf:heartbeat:pgsql \
-      pgctl="/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_ctl" \
-      pgdata="{{ pgsql_data_dir }}" \
-      psql="/usr/pgsql-{{ PGSQL_VERSION }}/bin/psql" \
-      config="{{ pgsql_data_dir }}/postgresql.conf" \
-      stop_escalate="5" \
-      rep_mode="sync" \
-      node_list="{{ ansible_play_hosts | join(' ') }}" \
-      restore_command="scp {{ pacemaker_cluster_info.virtual_ipaddr }}:{{ pgsql_archive_dir }}/%f %p" \
-      archive_cleanup_command="/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_archivecleanup {{ pgsql_archive_dir }} %r" \
-      master_ip="{{ pacemaker_cluster_info.virtual_ipaddr }}" \
-      primary_conninfo_opt="keepalives_idle=60 keepalives_interval=5 keepalives_count=5" \
-      repuser="{{ pgsql_replication_user }}" \
-      restart_on_promote="true" \
-      tmpdir="/var/run/postgresql" \
-      xlog_check_count="3" \
-      crm_attr_timeout="5" \
-      check_wal_receiver="true" \
-      op monitor interval="11s" op monitor interval="10s" role="Master" \
-      master master-max=1 master-node-max=1 clone-max=3 clone-node-max=1 notify=true target-role='Started' \
-      logfile="{{ pgsql_data_dir }}/startup.log" && \
-    \
-    pcs -f {{ pacemaker_config_file_path }} constraint location pgsql-master rule score=-INFINITY pingd lt 1 or not_defined pingd && \
-    pcs -f {{ pacemaker_config_file_path }} constraint colocation add master-vip with master pgsql-master INFINITY && \
-    pcs -f {{ pacemaker_config_file_path }} constraint order promote pgsql-master then start master-vip symmetrical=false score=INFINITY && \
-    pcs -f {{ pacemaker_config_file_path }} constraint order demote pgsql-master then stop master-vip symmetrical=false score=0 && \
-    pcs -f {{ pacemaker_config_file_path }} constraint location replica-vip rule score=200 pgsql-status eq HS:sync && \
-    pcs -f {{ pacemaker_config_file_path }} constraint location replica-vip rule score=100 pgsql-status eq PRI && \
-    pcs -f {{ pacemaker_config_file_path }} constraint location replica-vip rule score=-INFINITY not_defined pgsql-status && \
-    pcs -f {{ pacemaker_config_file_path }} constraint location replica-vip rule score=-INFINITY pgsql-status ne HS:sync and pgsql-status ne PRI && \
-    \
-    pcs cluster cib-push {{ pacemaker_config_file_path }} && \
-    pcs cluster cib {{ pacemaker_config_file_path }}
-  args:
-    creates: "{{ pacemaker_config_file_path }}"
+- name: detect cib.xml
+  stat:
+    path: "{{ pacemaker_config_file_path }}"
+  register: cib_file
+
+- block:
+  - name: save cib
+    shell: |
+      pcs cluster cib {{ pacemaker_config_file_path }}
+
+  - name: setup propertis
+    shell: |
+      pcs -f {{ pacemaker_config_file_path }} property set no-quorum-policy="ignore" && \
+      pcs -f {{ pacemaker_config_file_path }} property set stonith-enabled="false"
+
+  - name: create master-vip resource
+    shell: |
+      pcs -f {{ pacemaker_config_file_path }} resource create master-vip ocf:heartbeat:IPaddr2 \
+        ip={{ pacemaker_cluster_info.virtual_ipaddr }} iflabel=master op monitor interval=5s
+
+  - name: create replica-vip resource
+    shell: |
+      pcs -f {{ pacemaker_config_file_path }} resource create replica-vip ocf:heartbeat:IPaddr2 \
+        ip=192.168.33.14 iflabel=replica op monitor interval=5s
+
+  - name: create pingd resource
+    shell: |
+      pcs -f {{ pacemaker_config_file_path }} resource create ping ocf:pacemaker:ping \
+        dampen=5s multiplier=100 host_list=8.8.8.8 --clone
+
+  - name: create pgsql-master resource
+    shell: |
+      pcs -f {{ pacemaker_config_file_path }} resource create pgsql ocf:heartbeat:pgsql \
+        pgctl="/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_ctl" \
+        pgdata="{{ pgsql_data_dir }}" \
+        psql="/usr/pgsql-{{ PGSQL_VERSION }}/bin/psql" \
+        config="{{ pgsql_data_dir }}/postgresql.conf" \
+        stop_escalate="5" \
+        rep_mode="sync" \
+        node_list="{{ ansible_play_hosts | join(' ') }}" \
+        restore_command="scp {{ pacemaker_cluster_info.virtual_ipaddr }}:{{ pgsql_archive_dir }}/%f %p" \
+        archive_cleanup_command="/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_archivecleanup {{ pgsql_archive_dir }} %r" \
+        master_ip="{{ pacemaker_cluster_info.virtual_ipaddr }}" \
+        primary_conninfo_opt="keepalives_idle=60 keepalives_interval=5 keepalives_count=5" \
+        repuser="{{ pgsql_replication_user }}" \
+        restart_on_promote="true" \
+        tmpdir="/var/run/postgresql" \
+        xlog_check_count="3" \
+        crm_attr_timeout="5" \
+        check_wal_receiver="true" \
+        op monitor interval="11s" op monitor interval="10s" role="Master" \
+        master master-max=1 master-node-max=1 clone-max=3 clone-node-max=1 notify=true target-role='Started' \
+        logfile="{{ pgsql_data_dir }}/startup.log"
+
+  - name: setup pgsql-master constraints
+    shell: |
+      pcs -f {{ pacemaker_config_file_path }} constraint location pgsql-master rule score=-INFINITY pingd lt 1 or not_defined pingd && \
+      pcs -f {{ pacemaker_config_file_path }} constraint colocation add master-vip with master pgsql-master INFINITY && \
+      pcs -f {{ pacemaker_config_file_path }} constraint order promote pgsql-master then start master-vip symmetrical=false score=INFINITY && \
+      pcs -f {{ pacemaker_config_file_path }} constraint order demote pgsql-master then stop master-vip symmetrical=false score=0
+
+  - name: setup replica-vip constraints
+    shell: |
+      pcs -f {{ pacemaker_config_file_path }} constraint location replica-vip rule score=200 pgsql-status eq HS:sync && \
+      pcs -f {{ pacemaker_config_file_path }} constraint location replica-vip rule score=100 pgsql-status eq PRI && \
+      pcs -f {{ pacemaker_config_file_path }} constraint location replica-vip rule score=-INFINITY not_defined pgsql-status && \
+      pcs -f {{ pacemaker_config_file_path }} constraint location replica-vip rule score=-INFINITY pgsql-status ne HS:sync and pgsql-status ne PRI
+
+  - name: push cib
+    shell: |
+      pcs cluster cib-push {{ pacemaker_config_file_path }}
 
   run_once: true
   delegate_to: "{{ ansible_play_hosts[0] }}"
+  when: not cib_file.stat.exists
