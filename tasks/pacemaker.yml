@@ -34,7 +34,8 @@
   - name: create ping resource
     shell: |
       pcs -f {{ pgsql_pacemaker_config_path }} resource create ping ocf:pacemaker:ping \
-        dampen=5s multiplier=100 host_list=8.8.8.8 --clone
+        dampen=5s multiplier=100 host_list={{ pgsql_pacemaker_cluster_info.ping_hosts }} --clone
+    when: pgsql_pacemaker_cluster_info.ping_hosts is defined
 
   - name: create pgsql-master resource
     shell: |
@@ -67,7 +68,9 @@
 
   - name: setup pgsql-master constraints
     shell: |
+      {% if pgsql_pacemaker_cluster_info.ping_hosts is defined %}
       pcs -f {{ pgsql_pacemaker_config_path }} constraint location pgsql-master rule score=-INFINITY pingd lt 1 or not_defined pingd && \
+      {% endif %}
       pcs -f {{ pgsql_pacemaker_config_path }} constraint colocation add master-group with master pgsql-master INFINITY && \
       pcs -f {{ pgsql_pacemaker_config_path }} constraint order promote pgsql-master then start master-group symmetrical=false score=INFINITY && \
       pcs -f {{ pgsql_pacemaker_config_path }} constraint order demote pgsql-master then stop master-group symmetrical=false score=0
@@ -85,5 +88,5 @@
       pcs cluster cib-push {{ pgsql_pacemaker_config_path }}
 
   run_once: true
-  delegate_to: "{{ ansible_play_hosts[0] }}"
+  delegate_to: "{{ pgsql_replication_master }}"
   when: not cib_file.stat.exists
