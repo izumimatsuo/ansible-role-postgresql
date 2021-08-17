@@ -34,6 +34,9 @@ pacemaker_cluster_info を設定することで上記に加えて 1+1 (Master/St
 | pgsql_database_name      | development  | データベース名 |
 | pgsql_replication_user   | repl_user    | レプリケーションユーザ |
 | pgsql_replication_passwd | password     | レプリケーションユーザのパスワード |
-| pacemaker_cluster_name   | pgsqlcluster | クラスタ名 |
-| pacemaker_cluster_info   | None         | クラスタ情報設定 例 {virtual_ipaddr: xxx, check_interface: yyy} |
-| pacemaker_hacluster_password | password | クラスタ管理ユーザのパスワード |
+| pgsql_replication_hosts  | None         | レプリケーション用ホスト情報 |
+| pgsql_pacemaker_cluster_info.master_vip | None | |
+| pgsql_pacemaker_cluster_info.dbsync_vip | None | |
+| pgsql_pacemaker_cluster_info.replica_vip | None | |
+| pgsql_pacemaker_cluster_info.ping_target_hosts | None | |
+| pgsql_pacemaker_config_path | /var/lib/pacemaker/cib/cib-pgsql.xml | |
