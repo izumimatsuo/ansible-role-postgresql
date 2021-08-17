@@ -6,5 +6,5 @@ pgsql_database_name: 'development'
 pgsql_replication_user: 'repl_user'
 pgsql_replication_passwd: 'password'
 pgsql_replication_hosts: "{{ ansible_play_hosts }}"
-pgsql_pacemaker_cluster_info: # master_vip, dbsync_vip, replica_vip, ping_hosts
+pgsql_pacemaker_cluster_info: # master_vip, dbsync_vip, replica_vip, ping_target_hosts
 pgsql_pacemaker_config_path: '/var/lib/pacemaker/cib/cib-pgsql.xml'

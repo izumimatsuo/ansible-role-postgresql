@@ -39,8 +39,8 @@
   - name: create ping resource
     shell: |
       pcs -f {{ pgsql_pacemaker_config_path }} resource create ping ocf:pacemaker:ping \
-        dampen=5s multiplier=100 host_list={{ pgsql_pacemaker_cluster_info.ping_hosts }} --clone
-    when: pgsql_pacemaker_cluster_info.ping_hosts is defined
+        dampen=5s multiplier=100 host_list={{ pgsql_pacemaker_cluster_info.ping_target_hosts }} --clone
+    when: pgsql_pacemaker_cluster_info.ping_target_hosts is defined
 
   - name: create pgsql-master resource
     shell: |
@@ -73,7 +73,7 @@
 
   - name: setup pgsql-master constraints
     shell: |
-      {% if pgsql_pacemaker_cluster_info.ping_hosts is defined %}
+      {% if pgsql_pacemaker_cluster_info.ping_target_hosts is defined %}
       pcs -f {{ pgsql_pacemaker_config_path }} constraint location pgsql-master rule score=-INFINITY pingd lt 1 or not_defined pingd && \
       {% endif %}
       pcs -f {{ pgsql_pacemaker_config_path }} constraint colocation add master-group with master pgsql-master INFINITY && \
