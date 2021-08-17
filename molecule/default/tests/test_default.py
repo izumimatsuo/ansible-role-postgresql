@@ -15,7 +15,7 @@ def test_postgresql_is_installed(host):
 def test_postgresql_running_and_enabled(host):
     service = host.service("postgresql-9.6")
     assert service.is_running
-    assert service.is_enabled
+    assert not service.is_enabled
 
 
 def test_postgresql_is_listen(host):
