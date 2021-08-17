@@ -14,6 +14,11 @@
       pcs -f {{ pgsql_pacemaker_config_path }} property set no-quorum-policy="ignore" && \
       pcs -f {{ pgsql_pacemaker_config_path }} property set stonith-enabled="false"
 
+  - name: create vipcheck resource
+    shell: |
+      pcs -f {{ pgsql_pacemaker_config_path }} resource create vipcheck ocf:heartbeat:VIPcheck \
+        target_ip={{ pgsql_pacemaker_cluster_info.master.virtual_ipaddr }} count=1 wait=10 --group master-group
+
   - name: create master-vip resource
     shell: |
       pcs -f {{ pgsql_pacemaker_config_path }} resource create master-vip ocf:heartbeat:IPaddr2 \
@@ -72,8 +77,8 @@
       pcs -f {{ pgsql_pacemaker_config_path }} constraint location pgsql-master rule score=-INFINITY pingd lt 1 or not_defined pingd && \
       {% endif %}
       pcs -f {{ pgsql_pacemaker_config_path }} constraint colocation add master-group with master pgsql-master INFINITY && \
-      pcs -f {{ pgsql_pacemaker_config_path }} constraint order promote pgsql-master then start master-group symmetrical=false score=INFINITY && \
-      pcs -f {{ pgsql_pacemaker_config_path }} constraint order demote pgsql-master then stop master-group symmetrical=false score=0
+      pcs -f {{ pgsql_pacemaker_config_path }} constraint order start master-group then promote pgsql-master symmetrical=false score=INFINITY && \
+      pcs -f {{ pgsql_pacemaker_config_path }} constraint order stop master-group then demote pgsql-master symmetrical=false score=0
 
   - name: setup replica-vip constraints
     shell: |
