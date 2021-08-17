@@ -3,4 +3,4 @@
   service:
     name: "postgresql-{{ PGSQL_VERSION }}"
     state: restarted
-  when: pacemaker_cluster_info == None
+  when: pgsql_pacemaker_cluster_info == None
