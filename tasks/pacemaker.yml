@@ -78,7 +78,7 @@
       {% endif %}
       pcs -f {{ pgsql_pacemaker_config_path }} constraint colocation add master-group with master pgsql-master INFINITY && \
       pcs -f {{ pgsql_pacemaker_config_path }} constraint order start master-group then promote pgsql-master symmetrical=false score=INFINITY && \
-      pcs -f {{ pgsql_pacemaker_config_path }} constraint order stop master-group then demote pgsql-master symmetrical=false score=0
+      pcs -f {{ pgsql_pacemaker_config_path }} constraint order demote pgsql-master then stop master-group symmetrical=false score=0
 
   - name: setup replica-vip constraints
     shell: |
