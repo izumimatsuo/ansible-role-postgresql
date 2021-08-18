@@ -6,16 +6,15 @@
 
 - block:
   - name: detect default gateway
-    shell: set -o pipefail; ip -4 route | grep default | awk '{print $3}'
+    shell: ip -4 route | grep default | awk '{print $3}'
     register: default_gateway
     changed_when: false
-    failed_when: false
     when: pgsql_pacemaker_ping_target_hosts is undefined
 
-  - name: set ping target hosts as facts
+  - name: set pingcheck target hosts as facts
     set_fact:
       pgsql_pacemaker_ping_target_hosts: "{{ default_gateway.stdout }}"
-    when: default_gateway.stdout != ""
+    when: default_gateway.stdout
 
   - name: save cib
     shell: |
@@ -48,7 +47,7 @@
         ip={{ pgsql_pacemaker_cluster_info.replica.virtual_ipaddr }} iflabel=replica op monitor interval=5s
     when: pgsql_pacemaker_cluster_info.replica.virtual_ipaddr is defined
 
-  - name: create ping resource
+  - name: create pingcheck resource
     shell: |
       pcs -f {{ pgsql_pacemaker_config_path }} resource create ping ocf:pacemaker:ping \
         dampen=5s multiplier=100 host_list={{ pgsql_pacemaker_ping_target_hosts }} --clone
