@@ -4,4 +4,7 @@
   tasks:
     - name: setup net-tools package for test
       yum:
-        name: net-tools
+        name:
+          - net-tools
+          - ca-certificates
+        state: latest  # noqa 403

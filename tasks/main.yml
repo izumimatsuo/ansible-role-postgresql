@@ -7,7 +7,6 @@
   yum:
     name:
       - "{{ PGSQL_PACKAGE_BASE }}-server"
-      - "{{ PGSQL_PACKAGE_BASE }}-devel"
       - "{{ PGSQL_PACKAGE_BASE }}-contrib"
 
 - name: set postgres database base directory as facts
@@ -134,7 +133,7 @@
   - name: setup database cluster (standby)
     become: yes
     become_user: postgres
-    command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_basebackup -x -h {{ hostvars[pgsql_replication_hosts[0]].ansible_host if hostvars[pgsql_replication_hosts[0]] is defined else pgsql_replication_hosts[0] }} -p {{ pgsql_listen_port }} -U {{ pgsql_replication_user }} -D {{ pgsql_data_dir }} -P -R"
+    command: "/usr/pgsql-{{ PGSQL_VERSION }}/bin/pg_basebackup -h {{ hostvars[pgsql_replication_hosts[0]].ansible_host if hostvars[pgsql_replication_hosts[0]] is defined else pgsql_replication_hosts[0] }} -p {{ pgsql_listen_port }} -U {{ pgsql_replication_user }} -D {{ pgsql_data_dir }} -X stream -R -P"
     when: not dbcluster.stat.exists
 
   - name: start postgresql service (standby)

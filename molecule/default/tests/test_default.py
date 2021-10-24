@@ -7,13 +7,13 @@ testinfra_hosts = testinfra.utils.ansible_runner.AnsibleRunner(
 
 
 def test_postgresql_is_installed(host):
-    package = host.package("postgresql96")
+    package = host.package("postgresql11")
     assert package.is_installed
-    assert package.version.startswith("9.6")
+    assert package.version.startswith("11")
 
 
 def test_postgresql_running_and_enabled(host):
-    service = host.service("postgresql-9.6")
+    service = host.service("postgresql-11")
     assert service.is_running
     assert not service.is_enabled
 
